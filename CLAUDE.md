@@ -49,6 +49,15 @@ Planned layers as routes are added:
 - **Services** — business logic, Claude API wrapper, email provider wrapper
 - **Prisma** — DB access; schema at `prisma/schema.prisma`
 
+### Auth
+
+- **Better Auth** (`src/lib/auth.ts`) — email/password, database sessions via Prisma adapter (`@prisma/client` default output).
+- `disableSignUp: true` — no public registration; users are created via `prisma/seed.ts` (uses `auth.$context` to call `internalAdapter.createUser`/`linkAccount` directly, bypassing the disabled sign-up endpoint).
+- `user.additionalFields.role` (`admin | agent`, default `agent`, `input: false`) — backed by `Role` enum on `User` in `schema.prisma`.
+- Auth handler mounted at `/api/auth/*splat` (before `express.json()`).
+- `requireAuth` middleware (`src/middleware/auth.ts`) — calls `auth.api.getSession`, attaches `req.user`/`req.session`. Used by `/api/me`.
+- Seed admin: `bun db:seed` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env, idempotent).
+
 ### Client (`/client/src/`)
 
 Planned layers:
@@ -66,7 +75,10 @@ Planned layers:
 
 ```
 DATABASE_URL          # PostgreSQL connection string
-SESSION_SECRET        # Express session secret
+BETTER_AUTH_SECRET    # Better Auth session/cookie signing secret
+BETTER_AUTH_URL       # Better Auth base URL (http://localhost:3001)
+ADMIN_EMAIL           # Seeded admin user email
+ADMIN_PASSWORD        # Seeded admin user password
 ANTHROPIC_API_KEY     # Claude API key
 SENDGRID_API_KEY      # or MAILGUN_API_KEY
 EMAIL_WEBHOOK_SECRET  # HMAC secret for inbound webhook verification
