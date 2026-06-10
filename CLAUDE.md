@@ -79,7 +79,10 @@ BETTER_AUTH_SECRET    # Better Auth session/cookie signing secret
 BETTER_AUTH_URL       # Better Auth base URL (http://localhost:3001)
 ADMIN_EMAIL           # Seeded admin user email
 ADMIN_PASSWORD        # Seeded admin user password
+CLIENT_URL            # Client origin for CORS (http://localhost:5173)
 ANTHROPIC_API_KEY     # Claude API key
 SENDGRID_API_KEY      # or MAILGUN_API_KEY
 EMAIL_WEBHOOK_SECRET  # HMAC secret for inbound webhook verification
 ```
+
+`/client` also has its own `.env` with `VITE_SERVER_URL` (server origin used by the Better Auth client and API calls, default `http://localhost:3001`).
