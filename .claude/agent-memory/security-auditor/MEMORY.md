@@ -1,0 +1,1 @@
+- [Auth/authz architecture and pending gap](project_auth_authz_state.md) — requireAuth has no role check; /api/users not built yet, must add requireRole before it ships
