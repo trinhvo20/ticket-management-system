@@ -60,10 +60,10 @@ Planned layers as routes are added:
 
 ### Client (`/client/src/`)
 
-Planned layers:
-- **Pages** — Login, Dashboard, Ticket List, Ticket Detail, User Management
-- **Router** — React Router with protected routes (redirect to `/login` if unauthenticated)
-- **API layer** — centralized fetch wrapper for all server calls
+- **Pages** (`src/pages/`) — `Login`, `Home` (dashboard), `Users` (admin-only). Planned: Ticket List, Ticket Detail.
+- **Router** (`App.tsx`) — React Router; `ProtectedRoute` (`src/components/ProtectedRoute.tsx`) redirects to `/login` if unauthenticated, and accepts an `adminOnly` prop that redirects non-admins to `/`.
+- **Nav** (`src/components/Nav.tsx`) — title + nav links/tabs grouped on the left (admin-only links conditional on `session.user.role`), user name + sign out grouped on the right.
+- **API layer** — centralized fetch wrapper for all server calls (planned).
 - **UI** — shadcn/ui components in `src/components/ui/` (`bunx shadcn@latest add <name>` to add more); use `Field`/`FieldGroup`/`FieldLabel`/`FieldError` for forms (this shadcn version has no `Form`/`FormField` wrapper)
 
 ### Domain
