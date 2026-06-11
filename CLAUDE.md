@@ -12,7 +12,7 @@ AI-powered support ticket management system. Inbound emails become tickets; Clau
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript, Tailwind CSS, React Router — `/client` (Vite, port 5173)
+- **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router — `/client` (Vite, port 5173)
 - **Backend**: Express 5 + TypeScript, runs on Bun — `/server` (port 3001)
 - **Database**: PostgreSQL via Prisma ORM
 - **AI**: Anthropic Claude API
@@ -64,6 +64,7 @@ Planned layers:
 - **Pages** — Login, Dashboard, Ticket List, Ticket Detail, User Management
 - **Router** — React Router with protected routes (redirect to `/login` if unauthenticated)
 - **API layer** — centralized fetch wrapper for all server calls
+- **UI** — shadcn/ui components in `src/components/ui/` (`bunx shadcn@latest add <name>` to add more); use `Field`/`FieldGroup`/`FieldLabel`/`FieldError` for forms (this shadcn version has no `Form`/`FormField` wrapper)
 
 ### Domain
 
