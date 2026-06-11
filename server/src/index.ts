@@ -3,6 +3,7 @@ import cors from 'cors'
 import { toNodeHandler } from 'better-auth/node'
 import { auth } from './lib/auth'
 import { requireAuth } from './middleware/auth'
+import { usersRouter } from './routes/users'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -18,8 +19,11 @@ app.get('/health', (_req, res) => {
 })
 
 app.get('/api/me', requireAuth, (req, res) => {
-  res.json({ user: req.user, session: req.session })
+  const { id, name, email, role } = req.user
+  res.json({ user: { id, name, email, role } })
 })
+
+app.use('/api/users', usersRouter)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
