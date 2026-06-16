@@ -61,17 +61,13 @@ Planned layers as routes are added:
 - `requireAuth` middleware (`src/middleware/auth.ts`) — calls `auth.api.getSession`, attaches `req.user`/`req.session`. Used by `/api/me`.
 - Seed admin: `bun db:seed` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env, idempotent).
 
+### E2E Testing
+
+Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Invoke it after implementing a significant feature, page, or user flow. Tests live in `e2e/`; run with `bun test:e2e` or `bun test:e2e:ui`.
+
 ### Rate Limiting
 
 `express-rate-limit` is applied globally in `src/index.ts` — 100 req / 15 min per IP, only when `NODE_ENV=production`. No-op in development and test.
-
-### E2E Testing (Playwright)
-
-- Config: `playwright.config.ts` (root) — Chromium only, `baseURL` http://localhost:5173.
-- Tests live in `e2e/`. Both webServers (server + client) are started automatically.
-- **Separate test DB**: `TicketManagementSystem_test`. Must exist in Postgres before first run.
-- `e2e/global-setup.ts` — runs `prisma migrate deploy` then `prisma/seed-test.ts` (seeds `admin@example.com` + `agent@example.com`, both pw `password123`) against the test DB.
-- Server is started with `server/.env.test` env so it hits the test DB, not dev.
 
 ### Client (`/client/src/`)
 
