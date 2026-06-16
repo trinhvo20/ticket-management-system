@@ -1,0 +1,1 @@
+- [Test patterns & selectors](test-patterns.md) — login helper, seeded user names, FieldError role=alert, nav selectors, auth behavior summary
