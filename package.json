@@ -6,7 +6,14 @@
     "dev:server": "bun --filter server dev",
     "dev:client": "bun --filter client dev",
     "build": "bun --filter server build && bun --filter client build",
-    "typecheck": "bun --filter server typecheck && bun --filter client typecheck"
+    "typecheck": "bun --filter server typecheck && bun --filter client typecheck",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report"
   },
-  "workspaces": ["client", "server"]
+  "workspaces": ["client", "server"],
+  "devDependencies": {
+    "@playwright/test": "^1.61.0",
+    "dotenv": "^17.4.2"
+  }
 }

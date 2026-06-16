@@ -23,18 +23,21 @@ AI-powered support ticket management system. Inbound emails become tickets; Clau
 
 ```bash
 # Root
-bun dev           # start server + client concurrently
-bun build         # build both
-bun typecheck     # type-check both workspaces
+bun dev             # start server + client concurrently
+bun build           # build both
+bun typecheck       # type-check both workspaces
+bun test:e2e        # run Playwright E2E tests (uses test DB)
+bun test:e2e:ui     # Playwright UI mode
 
 # /server
-bun dev           # bun --watch src/index.ts
-bun typecheck     # tsc --noEmit
+bun dev             # bun --watch src/index.ts
+bun typecheck       # tsc --noEmit
+bun db:seed         # seed admin user (reads ADMIN_EMAIL/ADMIN_PASSWORD)
 
 # /client
-bun dev           # vite (http://localhost:5173)
-bun build         # tsc -b && vite build
-bun lint          # eslint
+bun dev             # vite (http://localhost:5173)
+bun build           # tsc -b && vite build
+bun lint            # eslint
 ```
 
 ## Architecture
@@ -57,6 +60,18 @@ Planned layers as routes are added:
 - Auth handler mounted at `/api/auth/*splat` (before `express.json()`).
 - `requireAuth` middleware (`src/middleware/auth.ts`) — calls `auth.api.getSession`, attaches `req.user`/`req.session`. Used by `/api/me`.
 - Seed admin: `bun db:seed` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env, idempotent).
+
+### Rate Limiting
+
+`express-rate-limit` is applied globally in `src/index.ts` — 100 req / 15 min per IP, only when `NODE_ENV=production`. No-op in development and test.
+
+### E2E Testing (Playwright)
+
+- Config: `playwright.config.ts` (root) — Chromium only, `baseURL` http://localhost:5173.
+- Tests live in `e2e/`. Both webServers (server + client) are started automatically.
+- **Separate test DB**: `TicketManagementSystem_test`. Must exist in Postgres before first run.
+- `e2e/global-setup.ts` — runs `prisma migrate deploy` then `prisma/seed-test.ts` (seeds `admin@example.com` + `agent@example.com`, both pw `password123`) against the test DB.
+- Server is started with `server/.env.test` env so it hits the test DB, not dev.
 
 ### Client (`/client/src/`)
 
