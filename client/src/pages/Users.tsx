@@ -1,9 +1,9 @@
-import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { useSession } from '../lib/auth-client'
-import { getUsers, createUser, deleteUser, type User } from '../lib/api'
+import { getUsers, createUser, deleteUser, userKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field'
@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { useState } from 'react'
 
 const createUserSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -28,11 +29,16 @@ type CreateUserValues = z.infer<typeof createUserSchema>
 
 export function Users() {
   const { data: session } = useSession()
-  const [users, setUsers] = useState<User[]>([])
-  const [loading, setLoading] = useState(true)
-  const [pageError, setPageError] = useState<string | null>(null)
   const [showForm, setShowForm] = useState(false)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
+
+  const {
+    data: users = [],
+    isLoading,
+    error: fetchError,
+  } = useQuery({
+    queryKey: userKeys.all,
+    queryFn: getUsers,
+  })
 
   const {
     register,
@@ -45,35 +51,24 @@ export function Users() {
     defaultValues: { role: 'agent' },
   })
 
-  useEffect(() => {
-    getUsers()
-      .then(({ users }) => setUsers(users))
-      .catch((err) => setPageError(err.message))
-      .finally(() => setLoading(false))
-  }, [])
-
-  async function onSubmit(values: CreateUserValues) {
-    try {
-      const { user } = await createUser(values)
-      setUsers((prev) => [...prev, user])
+  const createMutation = useMutation({
+    mutationFn: createUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
       setShowForm(false)
       reset()
-    } catch (err: any) {
+    },
+    onError: (err: Error) => {
       setError('root', { message: err.message })
-    }
-  }
+    },
+  })
 
-  async function handleDelete(id: string) {
-    setDeletingId(id)
-    try {
-      await deleteUser(id)
-      setUsers((prev) => prev.filter((u) => u.id !== id))
-    } catch (err: any) {
-      setPageError(err.message)
-    } finally {
-      setDeletingId(null)
-    }
-  }
+  const deleteMutation = useMutation({
+    mutationFn: deleteUser,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
+    },
+  })
 
   function handleCancel() {
     setShowForm(false)
@@ -95,7 +90,7 @@ export function Users() {
             <CardTitle>Add new user</CardTitle>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} noValidate>
+            <form onSubmit={handleSubmit((values) => createMutation.mutate(values))} noValidate>
               <FieldGroup>
                 <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                   <Field data-invalid={!!errors.name}>
@@ -141,11 +136,11 @@ export function Users() {
         </Card>
       )}
 
-      {pageError && (
-        <p className="text-sm text-destructive">{pageError}</p>
+      {fetchError && (
+        <p className="text-sm text-destructive">{(fetchError as Error).message}</p>
       )}
 
-      {loading ? (
+      {isLoading ? (
         <p className="text-sm text-muted-foreground">Loading users...</p>
       ) : (
         <Card>
@@ -162,6 +157,7 @@ export function Users() {
             <TableBody>
               {users.map((user) => {
                 const isSelf = user.id === session?.user.id
+                const isDeleting = deleteMutation.isPending && deleteMutation.variables === user.id
                 return (
                   <TableRow key={user.id}>
                     <TableCell className="px-4 font-medium">{user.name}</TableCell>
@@ -184,10 +180,10 @@ export function Users() {
                       <Button
                         variant="destructive"
                         size="xs"
-                        disabled={isSelf || deletingId === user.id}
-                        onClick={() => handleDelete(user.id)}
+                        disabled={isSelf || isDeleting}
+                        onClick={() => deleteMutation.mutate(user.id)}
                       >
-                        {deletingId === user.id ? 'Deleting...' : 'Delete'}
+                        {isDeleting ? 'Deleting...' : 'Delete'}
                       </Button>
                     </TableCell>
                   </TableRow>

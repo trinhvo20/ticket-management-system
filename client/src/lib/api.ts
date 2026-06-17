@@ -1,18 +1,22 @@
+import axios from 'axios'
+import { QueryClient } from '@tanstack/react-query'
+
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const res = await fetch(`${BASE}${path}`, {
-    credentials: 'include',
-    headers: { 'Content-Type': 'application/json', ...init?.headers },
-    ...init,
-  })
+export const api = axios.create({
+  baseURL: BASE,
+  withCredentials: true,
+})
 
-  if (res.status === 204) return undefined as T
+api.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    const message = err.response?.data?.error ?? err.message
+    return Promise.reject(new Error(message))
+  },
+)
 
-  const body = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(body.error ?? `Request failed: ${res.status}`)
-  return body
-}
+export const queryClient = new QueryClient()
 
 export interface User {
   id: string
@@ -22,19 +26,25 @@ export interface User {
   createdAt: string
 }
 
-export function getUsers(): Promise<{ users: User[] }> {
-  return request('/api/users')
+export const userKeys = {
+  all: ['users'] as const,
 }
 
-export function createUser(data: {
+export async function getUsers(): Promise<User[]> {
+  const { data } = await api.get<{ users: User[] }>('/api/users')
+  return data.users
+}
+
+export async function createUser(payload: {
   name: string
   email: string
   password: string
   role: 'admin' | 'agent'
-}): Promise<{ user: User }> {
-  return request('/api/users', { method: 'POST', body: JSON.stringify(data) })
+}): Promise<User> {
+  const { data } = await api.post<{ user: User }>('/api/users', payload)
+  return data.user
 }
 
-export function deleteUser(id: string): Promise<void> {
-  return request(`/api/users/${id}`, { method: 'DELETE' })
+export async function deleteUser(id: string): Promise<void> {
+  await api.delete(`/api/users/${id}`)
 }

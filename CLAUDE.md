@@ -12,7 +12,7 @@ AI-powered support ticket management system. Inbound emails become tickets; Clau
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router — `/client` (Vite, port 5173)
+- **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router, **Axios** (HTTP), **TanStack Query v5** (server state) — `/client` (Vite, port 5173)
 - **Backend**: Express 5 + TypeScript, runs on Bun — `/server` (port 3001)
 - **Database**: PostgreSQL via Prisma ORM
 - **AI**: Anthropic Claude API
@@ -74,7 +74,8 @@ Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Invoke 
 - **Pages** (`src/pages/`) — `Login`, `Home` (dashboard), `Users` (admin-only). Planned: Ticket List, Ticket Detail.
 - **Router** (`App.tsx`) — React Router; `ProtectedRoute` (`src/components/ProtectedRoute.tsx`) redirects to `/login` if unauthenticated, and accepts an `adminOnly` prop that redirects non-admins to `/`.
 - **Nav** (`src/components/Nav.tsx`) — title + nav links/tabs grouped on the left (admin-only links conditional on `session.user.role`), user name + sign out grouped on the right.
-- **API layer** — centralized fetch wrapper for all server calls (planned).
+- **API layer** (`src/lib/api.ts`) — axios instance (`api`) with `baseURL` from `VITE_SERVER_URL` and `withCredentials: true`; shared `queryClient`; `userKeys` query-key factory. All server calls go through this file.
+- **Data fetching** — use **TanStack Query v5** (`useQuery` / `useMutation`) for all server state. Call `queryClient.invalidateQueries` after mutations instead of manually updating local state. Do not use `useState`/`useEffect` for data fetching.
 - **UI** — shadcn/ui components in `src/components/ui/` (`bunx shadcn@latest add <name>` to add more); use `Field`/`FieldGroup`/`FieldLabel`/`FieldError` for forms (this shadcn version has no `Form`/`FormField` wrapper)
 
 ### Domain
