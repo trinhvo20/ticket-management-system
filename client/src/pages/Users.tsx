@@ -16,6 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table'
+import { Skeleton } from '@/components/ui/skeleton'
 import { useState } from 'react'
 
 const createUserSchema = z.object({
@@ -141,7 +142,30 @@ export function Users() {
       )}
 
       {isLoading ? (
-        <p className="text-sm text-muted-foreground">Loading users...</p>
+        <Card>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="px-4">Name</TableHead>
+                <TableHead className="px-4">Email</TableHead>
+                <TableHead className="px-4">Role</TableHead>
+                <TableHead className="px-4">Created</TableHead>
+                <TableHead className="px-4" />
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {Array.from({ length: 4 }).map((_, i) => (
+                <TableRow key={i}>
+                  <TableCell className="px-4"><Skeleton className="h-4 w-32" /></TableCell>
+                  <TableCell className="px-4"><Skeleton className="h-4 w-48" /></TableCell>
+                  <TableCell className="px-4"><Skeleton className="h-5 w-12 rounded-full" /></TableCell>
+                  <TableCell className="px-4"><Skeleton className="h-4 w-20" /></TableCell>
+                  <TableCell className="px-4" />
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </Card>
       ) : (
         <Card>
           <Table>
