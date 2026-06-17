@@ -26,6 +26,7 @@ AI-powered support ticket management system. Inbound emails become tickets; Clau
 bun dev             # start server + client concurrently
 bun build           # build both
 bun typecheck       # type-check both workspaces
+bun run test:unit   # run client component tests (vitest, single run)
 bun test:e2e        # run Playwright E2E tests (uses test DB)
 bun test:e2e:ui     # Playwright UI mode
 
@@ -38,6 +39,8 @@ bun db:seed         # seed admin user (reads ADMIN_EMAIL/ADMIN_PASSWORD)
 bun dev             # vite (http://localhost:5173)
 bun build           # tsc -b && vite build
 bun lint            # eslint
+bun test:run        # vitest single run
+bun test            # vitest watch mode
 ```
 
 ## Architecture
@@ -60,6 +63,16 @@ Planned layers as routes are added:
 - Auth handler mounted at `/api/auth/*splat` (before `express.json()`).
 - `requireAuth` middleware (`src/middleware/auth.ts`) — calls `auth.api.getSession`, attaches `req.user`/`req.session`. Used by `/api/me`.
 - Seed admin: `bun db:seed` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env, idempotent).
+
+### Component Testing
+
+- **Stack**: Vitest + React Testing Library + jsdom, configured in `client/vite.config.ts`.
+- **Test files**: co-located with pages/components as `*.test.tsx` (e.g. `src/pages/Users.test.tsx`).
+- **Setup file**: `src/test/setup.ts` — imports `@testing-library/jest-dom` matchers (runs before every test).
+- **Shared helper**: `src/test/render-with-query.tsx` exports `renderWithQuery(ui, options?)` — wraps any element in a fresh `QueryClientProvider` (with `retry: false`). Use this instead of bare `render` whenever the component uses TanStack Query.
+- **Mocking**: use `vi.mock('../lib/api', () => ({ ... }))` to mock API functions and `queryClient`. Use `vi.mock('../lib/auth-client', ...)` to mock `useSession`.
+- **TanStack Query v5 note**: `mutationFn` receives a second context argument `{ client, meta, mutationKey }` — use `expect.anything()` for that arg in `toHaveBeenCalledWith` assertions.
+- **Run**: `bun run test:unit` from root (single run), or `bun run test:run` / `bun run test` inside `/client` for single-run / watch mode. Avoid bare `bun test` at the root — Bun's native test runner picks up Playwright specs and fails.
 
 ### E2E Testing
 

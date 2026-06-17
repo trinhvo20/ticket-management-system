@@ -7,6 +7,7 @@
     "dev:client": "bun --filter client dev",
     "build": "bun --filter server build && bun --filter client build",
     "typecheck": "bun --filter server typecheck && bun --filter client typecheck",
+    "test:unit": "bun --filter client test:run",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
