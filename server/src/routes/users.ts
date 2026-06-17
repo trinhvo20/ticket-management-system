@@ -1,8 +1,16 @@
 import { Router } from 'express'
+import { z } from 'zod'
 import { Role } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { auth } from '../lib/auth'
 import { requireAuth, requireAdmin } from '../middleware/auth'
+
+const createUserSchema = z.object({
+  name: z.string().trim().min(1, 'Name is required'),
+  email: z.email('Invalid email address'),
+  password: z.string().trim().min(8, 'Password must be at least 8 characters'),
+  role: z.enum(['admin', 'agent']).default('agent'),
+})
 
 export const usersRouter = Router()
 
@@ -16,12 +24,13 @@ usersRouter.get('/', requireAuth, requireAdmin, async (_req, res) => {
 })
 
 usersRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
-  const { name, email, password, role = 'agent' } = req.body
-
-  if (!name || !email || !password) {
-    res.status(400).json({ error: 'name, email, and password are required' })
+  const result = createUserSchema.safeParse(req.body)
+  if (!result.success) {
+    res.status(400).json({ error: result.error.issues[0].message })
     return
   }
+
+  const { name, email, password, role } = result.data
 
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {

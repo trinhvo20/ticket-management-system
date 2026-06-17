@@ -55,6 +55,8 @@ Planned layers as routes are added:
 - **Services** — business logic, Claude API wrapper, email provider wrapper
 - **Prisma** — DB access; schema at `prisma/schema.prisma`
 
+**Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Call `schema.safeParse(req.body)`, return a `400` with `result.error.issues[0].message` on failure, and destructure only from `result.data`. See `src/routes/users.ts` for the reference pattern.
+
 ### Auth
 
 - **Better Auth** (`src/lib/auth.ts`) — email/password, database sessions via Prisma adapter (`@prisma/client` default output).
@@ -89,6 +91,7 @@ Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Invoke 
 - **Nav** (`src/components/Nav.tsx`) — title + nav links/tabs grouped on the left (admin-only links conditional on `session.user.role`), user name + sign out grouped on the right.
 - **API layer** (`src/lib/api.ts`) — axios instance (`api`) with `baseURL` from `VITE_SERVER_URL` and `withCredentials: true`; shared `queryClient`; `userKeys` query-key factory. All server calls go through this file.
 - **Data fetching** — use **TanStack Query v5** (`useQuery` / `useMutation`) for all server state. Call `queryClient.invalidateQueries` after mutations instead of manually updating local state. Do not use `useState`/`useEffect` for data fetching.
+- **Forms** — use **react-hook-form** with `zodResolver` and a **Zod** schema for every form. Define the schema first, infer the type with `z.infer<typeof schema>`, then pass the resolver to `useForm`. Surface field errors via `FieldError` and root/server errors via `setError('root', { message })`. See `src/pages/Users.tsx` for the reference pattern.
 - **UI** — shadcn/ui components in `src/components/ui/` (`bunx shadcn@latest add <name>` to add more); use `Field`/`FieldGroup`/`FieldLabel`/`FieldError` for forms (this shadcn version has no `Form`/`FormField` wrapper)
 
 ### Domain

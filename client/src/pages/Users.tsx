@@ -20,9 +20,9 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { useState } from 'react'
 
 const createUserSchema = z.object({
-  name: z.string().min(1, 'Name is required'),
+  name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Enter a valid email address'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  password: z.string().trim().min(8, 'Password must be at least 8 characters'),
   role: z.enum(['agent', 'admin']),
 })
 
