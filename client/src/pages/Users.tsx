@@ -1,6 +1,6 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
-import { z } from 'zod'
+import { createUserSchema, type CreateUserInput } from '@ticket/core'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { useSession } from '../lib/auth-client'
 import { getUsers, createUser, deleteUser, userKeys, queryClient } from '../lib/api'
@@ -19,14 +19,6 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { useState } from 'react'
 
-const createUserSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required'),
-  email: z.email('Enter a valid email address'),
-  password: z.string().trim().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['agent', 'admin']),
-})
-
-type CreateUserValues = z.infer<typeof createUserSchema>
 
 export function Users() {
   const { data: session } = useSession()
@@ -47,7 +39,7 @@ export function Users() {
     reset,
     formState: { errors, isSubmitting },
     setError,
-  } = useForm<CreateUserValues>({
+  } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
     defaultValues: { role: 'agent' },
   })

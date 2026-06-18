@@ -14,6 +14,7 @@ AI-powered support ticket management system. Inbound emails become tickets; Clau
 
 - **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router, **Axios** (HTTP), **TanStack Query v5** (server state) — `/client` (Vite, port 5173)
 - **Backend**: Express 5 + TypeScript, runs on Bun — `/server` (port 3001)
+- **Shared**: `/core` — internal package (`@ticket/core`) for Zod schemas and types shared between client and server
 - **Database**: PostgreSQL via Prisma ORM
 - **AI**: Anthropic Claude API
 - **Email**: SendGrid or Mailgun
@@ -45,7 +46,18 @@ bun test            # vitest watch mode
 
 ## Architecture
 
-Bun monorepo with two workspaces: `/client` (React SPA) and `/server` (Express API). CORS is configured on the server to allow `http://localhost:5173`.
+Bun monorepo with three workspaces: `/core` (shared schemas/types), `/client` (React SPA), and `/server` (Express API). CORS is configured on the server to allow `http://localhost:5173`.
+
+### Core (`/core/src/`)
+
+The `@ticket/core` package holds **Zod schemas and inferred TypeScript types** that are used by both the server and the client. This avoids duplicating validation logic.
+
+- **Schemas** live in `src/schemas/<domain>.ts` (e.g. `src/schemas/user.ts`).
+- Each schema file exports the Zod schema **and** its inferred type (e.g. `createUserSchema` + `CreateUserInput`).
+- `src/index.ts` re-exports everything with `export * from './schemas/<domain>'`.
+- Import in server or client: `import { createUserSchema, type CreateUserInput } from '@ticket/core'`
+- Do **not** add `.default()` to fields in shared schemas — Zod's `.default()` makes the input type optional, which breaks `zodResolver` in react-hook-form. Handle defaults via server logic or `useForm({ defaultValues })` instead.
+- Add the package to a new workspace by listing it in the root `package.json` `"workspaces"` array and adding `"@ticket/core": "workspace:*"` to the workspace's `dependencies`, then run `bun install`.
 
 ### Server (`/server/src/`)
 
@@ -55,7 +67,7 @@ Planned layers as routes are added:
 - **Services** — business logic, Claude API wrapper, email provider wrapper
 - **Prisma** — DB access; schema at `prisma/schema.prisma`
 
-**Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Call `schema.safeParse(req.body)`, return a `400` with `result.error.issues[0].message` on failure, and destructure only from `result.data`. See `src/routes/users.ts` for the reference pattern.
+**Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Call `schema.safeParse(req.body)`, return a `400` with `result.error.issues[0].message` on failure, and destructure only from `result.data`. See `src/routes/users.ts` for the reference pattern. Import schemas from `@ticket/core` when the same schema is needed in the client; define server-only schemas locally.
 
 ### Auth
 

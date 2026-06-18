@@ -1,16 +1,9 @@
 import { Router } from 'express'
-import { z } from 'zod'
 import { Role } from '@prisma/client'
+import { createUserSchema } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { auth } from '../lib/auth'
 import { requireAuth, requireAdmin } from '../middleware/auth'
-
-const createUserSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required'),
-  email: z.email('Invalid email address'),
-  password: z.string().trim().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['admin', 'agent']).default('agent'),
-})
 
 export const usersRouter = Router()
 

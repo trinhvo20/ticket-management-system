@@ -12,7 +12,7 @@
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report"
   },
-  "workspaces": ["client", "server"],
+  "workspaces": ["core", "client", "server"],
   "devDependencies": {
     "@playwright/test": "^1.61.0",
     "dotenv": "^17.4.2"
