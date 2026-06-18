@@ -45,6 +45,14 @@ export async function createUser(payload: {
   return data.user
 }
 
+export async function updateUser(
+  id: string,
+  payload: { name: string; email: string; role: 'admin' | 'agent'; password?: string }
+): Promise<User> {
+  const { data } = await api.patch<{ user: User }>(`/api/users/${id}`, payload)
+  return data.user
+}
+
 export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}`)
 }

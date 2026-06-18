@@ -1,6 +1,9 @@
+import { useState } from 'react'
+import { Pencil, Trash2 } from 'lucide-react'
 import type { User } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { EditUserDialog } from './EditUserDialog'
 import {
   Table,
   TableBody,
@@ -20,6 +23,8 @@ interface UserTableProps {
 }
 
 export function UserTable({ users, isLoading, currentUserId, onDelete, deletingId }: UserTableProps) {
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+
   if (isLoading) {
     return (
       <Card>
@@ -84,14 +89,25 @@ export function UserTable({ users, isLoading, currentUserId, onDelete, deletingI
                   {new Date(user.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="px-4 text-right">
-                  <Button
-                    variant="destructive"
-                    size="xs"
-                    disabled={isSelf || isDeleting}
-                    onClick={() => onDelete(user.id)}
-                  >
-                    {isDeleting ? 'Deleting...' : 'Delete'}
-                  </Button>
+                  <div className="flex items-center justify-end gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon-xs"
+                      aria-label="Edit user"
+                      onClick={() => setEditingUser(user)}
+                    >
+                      <Pencil />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="icon-xs"
+                      aria-label="Delete user"
+                      disabled={isSelf || isDeleting}
+                      onClick={() => onDelete(user.id)}
+                    >
+                      <Trash2 />
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             )
@@ -105,6 +121,12 @@ export function UserTable({ users, isLoading, currentUserId, onDelete, deletingI
           )}
         </TableBody>
       </Table>
+      <EditUserDialog
+        user={editingUser}
+        currentUserId={currentUserId}
+        onClose={() => setEditingUser(null)}
+        onSuccess={() => setEditingUser(null)}
+      />
     </Card>
   )
 }

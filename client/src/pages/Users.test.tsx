@@ -14,6 +14,7 @@ vi.mock('../lib/api', () => ({
   getUsers: vi.fn(),
   createUser: vi.fn(),
   deleteUser: vi.fn(),
+  updateUser: vi.fn(),
   userKeys: { all: ['users'] },
   queryClient: { invalidateQueries: vi.fn() },
 }))
@@ -212,6 +213,35 @@ describe('Users page', () => {
       await userEvent.type(screen.getByLabelText('Password'), 'password123')
       await userEvent.click(screen.getByRole('button', { name: /create user/i }))
       expect(await screen.findByText(/valid email/i)).toBeInTheDocument()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Edit
+  // -------------------------------------------------------------------------
+
+  describe('edit', () => {
+    it('renders an edit button for each user row', async () => {
+      renderUsers()
+      await screen.findByText('Admin')
+      expect(screen.getAllByRole('button', { name: /edit user/i })).toHaveLength(2)
+    })
+
+    it('opens the edit dialog pre-populated when edit is clicked', async () => {
+      renderUsers()
+      await screen.findByText('Jane')
+      const editButtons = screen.getAllByRole('button', { name: /edit user/i })
+      await userEvent.click(editButtons[1]) // second row = Jane
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.getByLabelText('Name')).toHaveValue('Jane')
+    })
+
+    it('disables the role select on own row', async () => {
+      renderUsers()
+      await screen.findByText('Admin')
+      const editButtons = screen.getAllByRole('button', { name: /edit user/i })
+      await userEvent.click(editButtons[0]) // first row = Admin (self)
+      expect(screen.getByLabelText('Role')).toBeDisabled()
     })
   })
 
