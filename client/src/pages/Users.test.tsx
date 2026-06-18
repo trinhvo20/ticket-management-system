@@ -147,31 +147,31 @@ describe('Users page', () => {
   // Create form visibility
   // -------------------------------------------------------------------------
 
-  describe('"Add Agent" form', () => {
+  describe('"Add User" form', () => {
     it('is hidden on initial render', async () => {
       renderUsers()
       await screen.findByText('Admin')
       expect(screen.queryByText('Add new user')).not.toBeInTheDocument()
     })
 
-    it('appears when "Add Agent" is clicked', async () => {
+    it('appears when "Add User" is clicked', async () => {
       renderUsers()
       await screen.findByText('Admin')
-      await userEvent.click(screen.getByRole('button', { name: /add agent/i }))
+      await userEvent.click(screen.getByRole('button', { name: /add user/i }))
       expect(screen.getByText('Add new user')).toBeInTheDocument()
     })
 
-    it('hides the "Add Agent" button while the form is open', async () => {
+    it('hides the "Add User" button while the form is open', async () => {
       renderUsers()
       await screen.findByText('Admin')
-      await userEvent.click(screen.getByRole('button', { name: /add agent/i }))
-      expect(screen.queryByRole('button', { name: /add agent/i })).not.toBeInTheDocument()
+      await userEvent.click(screen.getByRole('button', { name: /add user/i }))
+      expect(screen.queryByRole('button', { name: /add user/i })).not.toBeInTheDocument()
     })
 
     it('closes the form when "Cancel" is clicked', async () => {
       renderUsers()
       await screen.findByText('Admin')
-      await userEvent.click(screen.getByRole('button', { name: /add agent/i }))
+      await userEvent.click(screen.getByRole('button', { name: /add user/i }))
       await userEvent.click(screen.getByRole('button', { name: /cancel/i }))
       expect(screen.queryByText('Add new user')).not.toBeInTheDocument()
     })
@@ -184,7 +184,7 @@ describe('Users page', () => {
   describe('form validation', () => {
     async function openForm() {
       await screen.findByText('Admin')
-      await userEvent.click(screen.getByRole('button', { name: /add agent/i }))
+      await userEvent.click(screen.getByRole('button', { name: /add user/i }))
     }
 
     it('shows a validation error when name is empty', async () => {
@@ -228,7 +228,7 @@ describe('Users page', () => {
         ...overrides,
       }
       await screen.findByText('Admin')
-      await userEvent.click(screen.getByRole('button', { name: /add agent/i }))
+      await userEvent.click(screen.getByRole('button', { name: /add user/i }))
       await userEvent.type(screen.getByLabelText('Name'), values.name)
       await userEvent.type(screen.getByLabelText('Email'), values.email)
       await userEvent.type(screen.getByLabelText('Password'), values.password)
