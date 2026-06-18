@@ -1,8 +1,11 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
+import { useMutation } from '@tanstack/react-query'
 import type { User } from '../lib/api'
+import { deleteUser, userKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { DeleteUserDialog } from './DeleteUserDialog'
 import { EditUserDialog } from './EditUserDialog'
 import {
   Table,
@@ -18,12 +21,19 @@ interface UserTableProps {
   users: User[]
   isLoading: boolean
   currentUserId: string | undefined
-  onDelete: (id: string) => void
-  deletingId: string | undefined
 }
 
-export function UserTable({ users, isLoading, currentUserId, onDelete, deletingId }: UserTableProps) {
+export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [deletingUser, setDeletingUser] = useState<User | null>(null)
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => deleteUser(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: userKeys.all })
+      setDeletingUser(null)
+    },
+  })
 
   if (isLoading) {
     return (
@@ -69,7 +79,7 @@ export function UserTable({ users, isLoading, currentUserId, onDelete, deletingI
         <TableBody>
           {users.map((user) => {
             const isSelf = user.id === currentUserId
-            const isDeleting = deletingId === user.id
+            const isAdmin = user.role === 'admin'
             return (
               <TableRow key={user.id}>
                 <TableCell className="px-4 font-medium">{user.name}</TableCell>
@@ -102,8 +112,8 @@ export function UserTable({ users, isLoading, currentUserId, onDelete, deletingI
                       variant="destructive"
                       size="icon-xs"
                       aria-label="Delete user"
-                      disabled={isSelf || isDeleting}
-                      onClick={() => onDelete(user.id)}
+                      disabled={isSelf || isAdmin}
+                      onClick={() => setDeletingUser(user)}
                     >
                       <Trash2 />
                     </Button>
@@ -126,6 +136,13 @@ export function UserTable({ users, isLoading, currentUserId, onDelete, deletingI
         currentUserId={currentUserId}
         onClose={() => setEditingUser(null)}
         onSuccess={() => setEditingUser(null)}
+      />
+      <DeleteUserDialog
+        user={deletingUser}
+        isPending={deleteMutation.isPending}
+        error={deleteMutation.error?.message}
+        onClose={() => { setDeletingUser(null); deleteMutation.reset() }}
+        onConfirm={() => deleteMutation.mutate(deletingUser!.id)}
       />
     </Card>
   )

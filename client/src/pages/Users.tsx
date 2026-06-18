@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 import { useSession } from '../lib/auth-client'
-import { getUsers, deleteUser, userKeys, queryClient } from '../lib/api'
+import { getUsers, userKeys } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
 import { AddUserForm } from './AddUserForm'
@@ -17,13 +17,6 @@ export function Users() {
   } = useQuery({
     queryKey: userKeys.all,
     queryFn: getUsers,
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: deleteUser,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: userKeys.all })
-    },
   })
 
   return (
@@ -50,8 +43,6 @@ export function Users() {
         users={users}
         isLoading={isLoading}
         currentUserId={session?.user.id}
-        onDelete={(id) => deleteMutation.mutate(id)}
-        deletingId={deleteMutation.isPending ? deleteMutation.variables : undefined}
       />
     </div>
   )

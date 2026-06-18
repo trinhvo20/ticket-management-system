@@ -3,7 +3,7 @@ import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { renderWithQuery } from '../test/render-with-query'
 import { Users } from './Users'
-import { getUsers, createUser, deleteUser } from '../lib/api'
+import { getUsers, createUser } from '../lib/api'
 import { useSession } from '../lib/auth-client'
 
 // ---------------------------------------------------------------------------
@@ -126,21 +126,21 @@ describe('Users page', () => {
   // -------------------------------------------------------------------------
 
   describe('delete', () => {
-    it("disables the delete button on the signed-in admin's own row", async () => {
+    it('disables the delete button for self and for admin rows', async () => {
       renderUsers()
       await screen.findByText('Admin')
-      const [adminDelete, agentDelete] = screen.getAllByRole('button', { name: /delete/i })
+      const [adminDelete, agentDelete] = screen.getAllByRole('button', { name: /delete user/i })
       expect(adminDelete).toBeDisabled()
       expect(agentDelete).not.toBeDisabled()
     })
 
-    it('calls deleteUser with the correct id when delete is clicked', async () => {
-      vi.mocked(deleteUser).mockResolvedValue(undefined)
+    it('opens a confirmation dialog when the delete button is clicked', async () => {
       renderUsers()
       await screen.findByText('Jane')
-      const [, agentDelete] = screen.getAllByRole('button', { name: /delete/i })
+      const [, agentDelete] = screen.getAllByRole('button', { name: /delete user/i })
       await userEvent.click(agentDelete)
-      expect(deleteUser).toHaveBeenCalledWith('agent-1', expect.anything())
+      expect(screen.getByRole('dialog')).toBeInTheDocument()
+      expect(screen.getByText(/are you sure/i)).toBeInTheDocument()
     })
   })
 
