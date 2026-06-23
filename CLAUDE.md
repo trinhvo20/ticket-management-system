@@ -58,6 +58,7 @@ The `@ticket/core` package holds **Zod schemas and inferred TypeScript types** t
 - Import in server or client: `import { createUserSchema, type CreateUserInput } from '@ticket/core'`
 - Do **not** add `.default()` to fields in shared schemas — Zod's `.default()` makes the input type optional, which breaks `zodResolver` in react-hook-form. Handle defaults via server logic or `useForm({ defaultValues })` instead.
 - Add the package to a new workspace by listing it in the root `package.json` `"workspaces"` array and adding `"@ticket/core": "workspace:*"` to the workspace's `dependencies`, then run `bun install`.
+- **Role enum** — use `Role` from `@ticket/core` instead of magic strings. `Role.Admin` = `'admin'`, `Role.Agent` = `'agent'`. Import: `import { Role } from '@ticket/core'`. Never compare or assign role values with raw string literals.
 
 ### Server (`/server/src/`)
 

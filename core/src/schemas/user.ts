@@ -1,5 +1,12 @@
 import { z } from 'zod'
 
+export const Role = {
+  Admin: 'admin',
+  Agent: 'agent',
+} as const
+
+export type Role = (typeof Role)[keyof typeof Role]
+
 export const createUserSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Invalid email address'),

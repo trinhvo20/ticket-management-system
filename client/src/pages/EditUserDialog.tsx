@@ -2,7 +2,7 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { updateUserSchema, type UpdateUserInput } from '@ticket/core'
+import { Role, updateUserSchema, type UpdateUserInput } from '@ticket/core'
 import { updateUser, userKeys, queryClient, type User } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import {
@@ -86,8 +86,8 @@ export function EditUserDialog({ user, currentUserId, onClose, onSuccess }: Edit
                   disabled={isSelf}
                   className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:cursor-not-allowed disabled:opacity-50"
                 >
-                  <option value="agent">Agent</option>
-                  <option value="admin">Admin</option>
+                  <option value={Role.Agent}>Agent</option>
+                  <option value={Role.Admin}>Admin</option>
                 </select>
                 <FieldError errors={errors.role ? [errors.role] : undefined} />
               </Field>

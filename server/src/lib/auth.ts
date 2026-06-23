@@ -16,6 +16,13 @@ export const auth = betterAuth({
         type: 'string',
         input: false,
         defaultValue: 'agent',
+        required: true,
+      },
+      deletedAt: {
+        type: 'date',
+        input: false,
+        required: false,
+        returned: true,
       },
     },
   },

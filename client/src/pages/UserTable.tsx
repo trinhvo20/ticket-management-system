@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2 } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
+import { Role } from '@ticket/core'
 import type { User } from '../lib/api'
 import { deleteUser, userKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
@@ -79,7 +80,7 @@ export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
         <TableBody>
           {users.map((user) => {
             const isSelf = user.id === currentUserId
-            const isAdmin = user.role === 'admin'
+            const isAdmin = user.role === Role.Admin
             return (
               <TableRow key={user.id}>
                 <TableCell className="px-4 font-medium">{user.name}</TableCell>
@@ -87,7 +88,7 @@ export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
                 <TableCell className="px-4">
                   <span
                     className={
-                      user.role === 'admin'
+                      user.role === Role.Admin
                         ? 'inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-blue-100 text-blue-700'
                         : 'inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-600'
                     }

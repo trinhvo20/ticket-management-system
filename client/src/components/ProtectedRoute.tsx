@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { Navigate } from 'react-router'
+import { Role } from '@ticket/core'
 import { useSession } from '../lib/auth-client'
 
 export function ProtectedRoute({
@@ -23,7 +24,7 @@ export function ProtectedRoute({
     return <Navigate to="/login" replace />
   }
 
-  if (adminOnly && session.user.role !== 'admin') {
+  if (adminOnly && session.user.role !== Role.Admin) {
     return <Navigate to="/" replace />
   }
 

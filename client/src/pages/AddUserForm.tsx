@@ -1,7 +1,7 @@
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useMutation } from '@tanstack/react-query'
-import { createUserSchema, type CreateUserInput } from '@ticket/core'
+import { Role, createUserSchema, type CreateUserInput } from '@ticket/core'
 import { createUser, userKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -22,7 +22,7 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
     setError,
   } = useForm<CreateUserInput>({
     resolver: zodResolver(createUserSchema),
-    defaultValues: { role: 'agent' },
+    defaultValues: { role: Role.Agent },
   })
 
   const createMutation = useMutation({
@@ -73,8 +73,8 @@ export function AddUserForm({ onSuccess, onCancel }: AddUserFormProps) {
                   {...register('role')}
                   className="h-8 w-full rounded-lg border border-input bg-transparent px-2.5 py-1 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
                 >
-                  <option value="agent">Agent</option>
-                  <option value="admin">Admin</option>
+                  <option value={Role.Agent}>Agent</option>
+                  <option value={Role.Admin}>Admin</option>
                 </select>
                 <FieldError errors={errors.role ? [errors.role] : undefined} />
               </Field>
