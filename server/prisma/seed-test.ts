@@ -3,13 +3,7 @@ import { auth } from '../src/lib/auth'
 import { prisma } from '../src/lib/prisma'
 import { Role } from '@prisma/client'
 
-async function upsertUser(email: string, password: string, name: string, role: Role) {
-  const existing = await prisma.user.findUnique({ where: { email } })
-  if (existing) {
-    console.log(`User ${email} already exists, skipping.`)
-    return
-  }
-
+async function createUser(email: string, password: string, name: string, role: Role) {
   const ctx = await auth.$context
   const hash = await ctx.password.hash(password)
 
@@ -31,14 +25,19 @@ async function upsertUser(email: string, password: string, name: string, role: R
 }
 
 async function main() {
-  await upsertUser(
+  // Wipe all users (cascades to sessions and accounts) so every run starts clean.
+  // Tests create throwaway users and can mutate seeded ones; this reset prevents cross-run contamination.
+  await prisma.user.deleteMany()
+  console.log('Cleared all users.')
+
+  await createUser(
     process.env.ADMIN_EMAIL ?? 'admin@example.com',
     process.env.ADMIN_PASSWORD ?? 'password123',
     'Admin',
     Role.admin,
   )
 
-  await upsertUser('agent@example.com', 'password123', 'Agent', Role.agent)
+  await createUser('agent@example.com', 'password123', 'Agent', Role.agent)
 }
 
 main()

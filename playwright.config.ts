@@ -12,7 +12,7 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   use: {
-    baseURL: 'http://localhost:5173',
+    baseURL: 'http://localhost:5174',
     trace: 'on-first-retry',
   },
   projects: [
@@ -21,17 +21,21 @@ export default defineConfig({
   globalSetup: './e2e/global-setup.ts',
   webServer: [
     {
+      // Run on a dedicated test port (3099) so the E2E server never conflicts with
+      // the dev server on 3001, and always uses the test DATABASE_URL from env.
       command: 'bun src/index.ts',
       cwd: resolve(__dirname, 'server'),
-      url: 'http://localhost:3001/health',
-      reuseExistingServer: !process.env.CI,
-      env: { ...process.env } as Record<string, string>,
+      url: 'http://localhost:3099/health',
+      reuseExistingServer: false,
+      env: { ...process.env, PORT: '3099', BETTER_AUTH_URL: 'http://localhost:3099', CLIENT_URL: 'http://localhost:5174' } as Record<string, string>,
     },
     {
-      command: 'bun dev',
+      // Port 5174 avoids conflict with the dev client on 5173.
+      // --mode e2e loads client/.env.e2e which points VITE_SERVER_URL at port 3099.
+      command: 'bunx vite --mode e2e --port 5174',
       cwd: resolve(__dirname, 'client'),
-      url: 'http://localhost:5173',
-      reuseExistingServer: !process.env.CI,
+      url: 'http://localhost:5174',
+      reuseExistingServer: false,
     },
   ],
 })

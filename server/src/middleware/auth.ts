@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express'
 import { fromNodeHeaders } from 'better-auth/node'
 import { Role } from '@ticket/core'
 import { auth } from '../lib/auth'
+import { prisma } from '../lib/prisma'
 
 type Session = typeof auth.$Infer.Session
 
@@ -23,7 +24,13 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Unauthorized' })
   }
 
-  if (session.user.deletedAt) {
+  // Query deletedAt directly — Better Auth additionalFields does not handle nullable dates reliably
+  const dbUser = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { deletedAt: true },
+  })
+
+  if (dbUser?.deletedAt) {
     return res.status(401).json({ error: 'Unauthorized' })
   }
 

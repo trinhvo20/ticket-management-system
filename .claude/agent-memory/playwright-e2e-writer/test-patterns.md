@@ -59,3 +59,36 @@ Use `page.route('**/api/auth/**', ...)` to delay responses and observe intermedi
 ## No shared-state concerns
 
 Each test uses a fresh browser context (Playwright default with `fullyParallel: true`). Sessions don't leak between tests.
+
+## Users page selectors (e2e/users.spec.ts)
+
+- **Add User button**: `getByRole('button', { name: 'Add User' })` — exact string, no regex needed
+- **Add user form heading**: `getByText('Add new user')` — CardTitle inside AddUserForm
+- **Create user submit**: `getByRole('button', { name: 'Create user' })`
+- **Cancel form**: `getByRole('button', { name: 'Cancel' })`
+- **Name field (add form)**: `getByLabel('Name')` — `htmlFor="name"` in AddUserForm
+- **Email field (add form)**: `getByLabel('Email')` — `htmlFor="email"` in AddUserForm
+- **Password field (add form)**: `getByLabel('Password')` — `htmlFor="password"` in AddUserForm
+- **Role select (add form)**: `getByLabel('Role').selectOption('admin' | 'agent')` — native `<select>` with id="role"
+- **Table rows**: `getByRole('row').filter({ hasText: 'email@example.com' })` to target a specific user's row
+- **Table cells**: `getByRole('cell', { name: 'text' })` — works for name and email columns
+- **Edit button (per-row)**: `row.getByRole('button', { name: 'Edit user' })` — aria-label in UserTable
+- **Delete button (per-row)**: `row.getByRole('button', { name: 'Delete user' })` — aria-label, disabled for self/admins
+- **Edit dialog**: `getByRole('dialog', { name: 'Edit user' })` — DialogTitle is "Edit user"
+- **Name field (edit dialog)**: `getByLabel('Name')` — `htmlFor="edit-name"` in EditUserDialog
+- **Email field (edit dialog)**: `getByLabel('Email')` — `htmlFor="edit-email"` in EditUserDialog
+- **Role select (edit dialog)**: `getByLabel('Role').selectOption(...)` — native `<select>` id="edit-role", disabled for self
+- **Save changes**: `getByRole('button', { name: 'Save changes' })`
+- **Delete dialog**: `getByRole('dialog', { name: 'Delete user' })` — DialogTitle is "Delete user"
+- **Delete confirm button**: `dialog.getByRole('button', { name: 'Delete' })` — scoped to the dialog
+
+## Users page test patterns
+
+- Scope role button lookups to a row: `page.getByRole('row').filter({ hasText: email })` then `.getByRole('button', ...)`. Avoids ambiguity when multiple rows are present.
+- When creating a throwaway user in delete tests, wait for the new row to appear (`expect(cell).toBeVisible()`) before opening the delete dialog — don't rely on timing alone.
+- Unique test data: use `Date.now()` suffix for names and emails to avoid inter-test collisions when tests run in parallel.
+- Helper `loginAsAdminAndGoToUsers` navigates to `/users` and asserts the heading to confirm the page loaded before each test body runs.
+
+## Login helper convention for multi-spec projects
+
+As of the second spec file (`users.spec.ts`), `loginAs` is still duplicated per file. If a third spec needs it, extract to `e2e/helpers/auth.ts` and import from there.

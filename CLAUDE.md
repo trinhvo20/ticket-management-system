@@ -93,6 +93,34 @@ Planned layers as routes are added:
 
 Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Invoke it after implementing a significant feature, page, or user flow. Tests live in `e2e/`; run with `bun test:e2e` or `bun test:e2e:ui`.
 
+#### Infrastructure
+
+E2E tests run on **dedicated ports, fully isolated from the dev environment**:
+
+| Process | Dev | E2E test |
+|---|---|---|
+| Server | 3001 (dev DB) | 3099 (test DB) |
+| Client | 5173 | 5174 |
+
+- `playwright.config.ts` starts a fresh server on port 3099 (`reuseExistingServer: false`) with the test `DATABASE_URL`, `BETTER_AUTH_URL=http://localhost:3099`, and `CLIENT_URL=http://localhost:5174` (CORS).
+- The test client runs with `bunx vite --mode e2e --port 5174`, which loads `client/.env.e2e` (`VITE_SERVER_URL=http://localhost:3099`).
+- **Never** set `reuseExistingServer: true` for the server — this would pick up the running dev server (dev DB) instead of starting a fresh test server.
+
+#### Test DB seed (`server/prisma/seed-test.ts`)
+
+The seed **wipes all users** (`prisma.user.deleteMany()`) then recreates exactly two:
+- `admin@example.com` / `password123` / role `admin`
+- `agent@example.com` / `password123` / role `agent`
+
+This reset runs before every `bun test:e2e` via `globalSetup`. It prevents cross-run contamination from tests that mutate users.
+
+#### Test authoring patterns
+
+- **Login helper**: `loginAs(page, 'admin' | 'agent')` — defined locally in each spec file (do not import across specs).
+- **Never mutate seeded users** in tests. Auth tests (`auth.spec.ts`) depend on `admin@example.com` and `agent@example.com` remaining stable. If a test needs to create, edit, or delete a user, create a **throwaway user** with a unique `Date.now()`-based email and operate on that.
+- **Row-scope selectors**: filter the table row by the user's unique email before clicking action buttons — `page.getByRole('row').filter({ hasText: email }).getByRole('button', { name: 'Edit user' })`. This avoids strict-mode violations when the table has multiple rows.
+- **Exact name matching**: when asserting a name cell, use `{ name: 'Agent', exact: true }` scoped to a row, not bare `getByRole('cell', { name: 'Agent' })` — parallel tests create users whose names contain "Agent" as a substring.
+
 ### Rate Limiting
 
 `express-rate-limit` is applied globally in `src/index.ts` — 100 req / 15 min per IP, only when `NODE_ENV=production`. No-op in development and test.

@@ -18,12 +18,6 @@ export const auth = betterAuth({
         defaultValue: 'agent',
         required: true,
       },
-      deletedAt: {
-        type: 'date',
-        input: false,
-        required: false,
-        returned: true,
-      },
     },
   },
   hooks: {
