@@ -5,24 +5,24 @@
 - [x] Initialize monorepo structure (`/client`, `/server`)
 - [x] Set up Express server with TypeScript
 - [x] Set up React app with TypeScript
-- [ ] Set up PostgreSQL database
+- [x] Set up PostgreSQL database
 
 ## Phase 2: Authentication
 
-- [ ] Create login page
-- [ ] Implement login API endpoint
-- [ ] Implement session-based authentication middleware
-- [ ] Implement logout API endpoint
-- [ ] Add route protection on the frontend (redirect to login if unauthenticated)
+- [x] Create login page
+- [x] Implement login API endpoint
+- [x] Implement session-based authentication middleware
+- [x] Implement logout API endpoint
+- [x] Add route protection on the frontend (redirect to login if unauthenticated)
 
 ## Phase 3: User Management
 
-- [ ] Create user management page (admin only)
-- [ ] Implement create agent API endpoint
-- [ ] Implement list users API endpoint
-- [ ] Implement edit user API endpoint
-- [ ] Implement delete user API endpoint
-- [ ] Add role-based access control (admin vs agent)
+- [x] Create user management page (admin only)
+- [x] Implement create agent API endpoint
+- [x] Implement list users API endpoint
+- [x] Implement edit user API endpoint
+- [x] Implement delete user API endpoint
+- [x] Add role-based access control (admin vs agent)
 
 ## Phase 4: Ticket CRUD
 

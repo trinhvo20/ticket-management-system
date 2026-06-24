@@ -8,7 +8,7 @@ Always use the **Context7 MCP** (`mcp__context7__resolve-library-id` → `mcp__c
 
 ## Project Overview
 
-AI-powered support ticket management system. Inbound emails become tickets; Claude API auto-classifies them, generates summaries, and suggests replies using a knowledge base.
+AI-powered support ticket management system. Inbound emails become tickets; Claude API auto-classifies them, generates summaries, and suggests replies using a knowledge base. See `project-scope.md` for full requirements and `implementation-plan.md` for phased task breakdown.
 
 ## Tech Stack
 
