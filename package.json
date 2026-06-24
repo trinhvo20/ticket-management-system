@@ -15,6 +15,7 @@
   "workspaces": ["core", "client", "server"],
   "devDependencies": {
     "@playwright/test": "^1.61.0",
+    "@types/node": "^22.0.0",
     "dotenv": "^17.4.2"
   }
 }

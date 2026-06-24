@@ -92,3 +92,21 @@ Each test uses a fresh browser context (Playwright default with `fullyParallel: 
 ## Login helper convention for multi-spec projects
 
 As of the second spec file (`users.spec.ts`), `loginAs` is still duplicated per file. If a third spec needs it, extract to `e2e/helpers/auth.ts` and import from there.
+
+## API-only (request fixture) tests — webhook spec
+
+For pure API tests (no browser), use the `request` fixture instead of `page`. Key differences:
+- `baseURL` in `playwright.config.ts` points at the **client** (`http://localhost:5174`), not the server. Always use an absolute URL for API calls: `const WEBHOOK_URL = 'http://localhost:3099/api/webhooks/email'`.
+- `playwright.config.ts` loads `server/.env.test` via dotenv at config-eval time, so `process.env.EMAIL_WEBHOOK_SECRET` is available in spec files as a constant (no need to hard-code the secret value).
+- Pattern: `const SECRET = process.env.EMAIL_WEBHOOK_SECRET ?? 'dev-webhook-secret'`
+- Pattern for auth header helper: `function authHeaders(token: string) { return { Authorization: \`Bearer \${token}\` } }`
+- Destructure-to-omit pattern for missing-field tests: `const { fieldName: _omit, ...rest } = VALID_PAYLOAD`
+
+## Webhook endpoint details
+
+- Route: `POST /api/webhooks/email` → `webhooksRouter` mounted at `/api/webhooks/email` in `server/src/index.ts`
+- Auth middleware (`server/src/middleware/webhook.ts`): requires `Authorization: Bearer <token>` matching `EMAIL_WEBHOOK_SECRET`; missing/wrong header → `401 { error: 'Unauthorized' }`
+- Validation: uses `parseBody(inboundEmailSchema, req.body, res)` from `server/src/lib/parse-body.ts`; invalid → `400 { error: issues[0].message }`
+- Success: `201 { id: number, status: 'open' }` — id is the auto-incremented Ticket PK
+- Ticket table is NOT wiped between test runs (only users table is wiped). Tests should not assume specific ticket IDs.
+- `EMAIL_WEBHOOK_SECRET` value in `server/.env.test` is `dev-webhook-secret`

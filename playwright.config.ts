@@ -27,7 +27,7 @@ export default defineConfig({
       cwd: resolve(__dirname, 'server'),
       url: 'http://localhost:3099/health',
       reuseExistingServer: false,
-      env: { ...process.env, PORT: '3099', BETTER_AUTH_URL: 'http://localhost:3099', CLIENT_URL: 'http://localhost:5174' } as Record<string, string>,
+      env: { ...process.env, PORT: '3099' } as Record<string, string>,
     },
     {
       // Port 5174 avoids conflict with the dev client on 5173.
