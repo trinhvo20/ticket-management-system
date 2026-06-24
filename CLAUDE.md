@@ -68,7 +68,7 @@ Planned layers as routes are added:
 - **Services** — business logic, Claude API wrapper, email provider wrapper
 - **Prisma** — DB access; schema at `prisma/schema.prisma`
 
-**Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Call `schema.safeParse(req.body)`, return a `400` with `result.error.issues[0].message` on failure, and destructure only from `result.data`. See `src/routes/users.ts` for the reference pattern. Import schemas from `@ticket/core` when the same schema is needed in the client; define server-only schemas locally.
+**Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Use the shared `parseBody` helper (`src/lib/parse-body.ts`) in every route handler: `const data = parseBody(schema, req.body, res); if (!data) return` — it calls `safeParse`, sends a `400` with `result.error.issues[0].message` on failure, and returns the typed data on success. Import schemas from `@ticket/core` when the same schema is needed in the client; define server-only schemas locally.
 
 ### Auth
 

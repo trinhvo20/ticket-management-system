@@ -1,6 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { Role } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { Users } from './Users'
 import { getUsers, createUser } from '../lib/api'
@@ -31,7 +32,7 @@ const ADMIN_USER = {
   id: 'admin-1',
   name: 'Admin',
   email: 'admin@example.com',
-  role: 'admin' as const,
+  role: Role.Admin,
   createdAt: '2024-01-01T00:00:00.000Z',
 }
 
@@ -39,7 +40,7 @@ const AGENT_USER = {
   id: 'agent-1',
   name: 'Jane',
   email: 'jane@example.com',
-  role: 'agent' as const,
+  role: Role.Agent,
   createdAt: '2024-01-02T00:00:00.000Z',
 }
 
@@ -269,7 +270,7 @@ describe('Users page', () => {
         id: 'new-1',
         name: 'New Agent',
         email: 'newagent@example.com',
-        role: 'agent',
+        role: Role.Agent,
         createdAt: '2024-01-03T00:00:00.000Z',
       })
       renderUsers()
@@ -288,7 +289,7 @@ describe('Users page', () => {
         id: 'new-1',
         name: 'New Agent',
         email: 'newagent@example.com',
-        role: 'agent',
+        role: Role.Agent,
         createdAt: '2024-01-03T00:00:00.000Z',
       })
       renderUsers()

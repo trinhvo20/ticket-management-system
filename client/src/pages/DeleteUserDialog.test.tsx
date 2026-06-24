@@ -1,6 +1,7 @@
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi } from 'vitest'
+import { Role } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { DeleteUserDialog } from './DeleteUserDialog'
 import type { User } from '../lib/api'
@@ -9,7 +10,7 @@ const AGENT_USER: User = {
   id: 'agent-1',
   name: 'Jane',
   email: 'jane@example.com',
-  role: 'agent',
+  role: Role.Agent,
   createdAt: '2024-01-02T00:00:00.000Z',
 }
 

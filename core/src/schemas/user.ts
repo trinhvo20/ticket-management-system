@@ -1,17 +1,15 @@
 import { z } from 'zod'
 
-export const Role = {
-  Admin: 'admin',
-  Agent: 'agent',
-} as const
-
-export type Role = (typeof Role)[keyof typeof Role]
+export enum Role {
+  Admin = 'admin',
+  Agent = 'agent',
+}
 
 export const createUserSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Invalid email address'),
   password: z.string().trim().min(8, 'Password must be at least 8 characters'),
-  role: z.enum(['admin', 'agent']),
+  role: z.nativeEnum(Role),
 })
 
 export type CreateUserInput = z.infer<typeof createUserSchema>
@@ -19,7 +17,7 @@ export type CreateUserInput = z.infer<typeof createUserSchema>
 export const updateUserSchema = z.object({
   name: z.string().trim().min(1, 'Name is required'),
   email: z.email('Invalid email address'),
-  role: z.enum(['admin', 'agent']),
+  role: z.nativeEnum(Role),
   password: z
     .string()
     .optional()

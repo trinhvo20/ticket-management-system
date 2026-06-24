@@ -5,6 +5,7 @@ import { toNodeHandler } from 'better-auth/node'
 import { auth } from './lib/auth'
 import { requireAuth } from './middleware/auth'
 import { usersRouter } from './routes/users'
+import { webhooksRouter } from './routes/webhooks'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -34,6 +35,8 @@ app.get('/api/me', requireAuth, (req, res) => {
 })
 
 app.use('/api/users', usersRouter)
+const webhookRateLimit = rateLimit({ windowMs: 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false })
+app.use('/api/webhooks/email', webhookRateLimit, webhooksRouter)
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

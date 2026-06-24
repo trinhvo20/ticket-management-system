@@ -1,1 +1,2 @@
 - [Auth/authz architecture and pending gap](project_auth_authz_state.md) — requireAuth has no role check; /api/users not built yet, must add requireRole before it ships
+- [Webhook security findings (2026-06-24)](project_webhook_security.md) — timing attack on token compare + unbounded field lengths are open issues; Prisma and auth ordering are safe

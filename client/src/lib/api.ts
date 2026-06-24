@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { QueryClient } from '@tanstack/react-query'
+import { Role } from '@ticket/core'
 
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
@@ -22,7 +23,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: 'admin' | 'agent'
+  role: Role
   createdAt: string
 }
 
@@ -39,7 +40,7 @@ export async function createUser(payload: {
   name: string
   email: string
   password: string
-  role: 'admin' | 'agent'
+  role: Role
 }): Promise<User> {
   const { data } = await api.post<{ user: User }>('/api/users', payload)
   return data.user
@@ -47,7 +48,7 @@ export async function createUser(payload: {
 
 export async function updateUser(
   id: string,
-  payload: { name: string; email: string; role: 'admin' | 'agent'; password?: string }
+  payload: { name: string; email: string; role: Role; password?: string }
 ): Promise<User> {
   const { data } = await api.patch<{ user: User }>(`/api/users/${id}`, payload)
   return data.user
