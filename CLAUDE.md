@@ -70,6 +70,15 @@ Planned layers as routes are added:
 
 **Validation** — use **Zod** to validate all request bodies before touching the DB or auth layer. Use the shared `parseBody` helper (`src/lib/parse-body.ts`) in every route handler: `const data = parseBody(schema, req.body, res); if (!data) return` — it calls `safeParse`, sends a `400` with `result.error.issues[0].message` on failure, and returns the typed data on success. Import schemas from `@ticket/core` when the same schema is needed in the client; define server-only schemas locally.
 
+### Email Webhook
+
+- **Endpoint**: `POST /api/webhooks/email` — provider-agnostic; accepts a normalized JSON payload and creates a `Ticket`.
+- **Auth**: `webhookAuth` middleware (`src/middleware/webhook.ts`) — checks `Authorization: Bearer <token>` against `EMAIL_WEBHOOK_SECRET` using `crypto.timingSafeEqual`. Applied via `webhooksRouter.use(webhookAuth)` so the router owns its own auth.
+- **Payload** (validated by `inboundEmailSchema` from `@ticket/core`): `{ from, fromName, subject, body, bodyHtml? }`.
+- **Response**: `201 { id, status }` — returns only id and status, not the full row.
+- **Rate limit**: 20 req/min (applied in `src/index.ts`, always on, separate from the global production-only limiter).
+- **Ticket model**: `id` (autoincrement Int), `subject`, `body`, `bodyHtml?`, `fromEmail`, `fromName`, `status` (default `open`), `category?`, `assignedToId?` → `User`.
+
 ### Auth
 
 - **Better Auth** (`src/lib/auth.ts`) — email/password, database sessions via Prisma adapter (`@prisma/client` default output).
