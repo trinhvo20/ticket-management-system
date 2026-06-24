@@ -102,7 +102,7 @@ E2E tests run on **dedicated ports, fully isolated from the dev environment**:
 | Server | 3001 (dev DB) | 3099 (test DB) |
 | Client | 5173 | 5174 |
 
-- `playwright.config.ts` starts a fresh server on port 3099 (`reuseExistingServer: false`) with the test `DATABASE_URL`, `BETTER_AUTH_URL=http://localhost:3099`, and `CLIENT_URL=http://localhost:5174` (CORS).
+- `playwright.config.ts` starts a fresh server on port 3099 (`reuseExistingServer: false`) using `server/.env.test` (which sets `SERVER_URL`, `CLIENT_URL`, and `DATABASE_URL` to the correct test values).
 - The test client runs with `bunx vite --mode e2e --port 5174`, which loads `client/.env.e2e` (`VITE_SERVER_URL=http://localhost:3099`).
 - **Never** set `reuseExistingServer: true` for the server — this would pick up the running dev server (dev DB) instead of starting a fresh test server.
 
@@ -146,7 +146,7 @@ This reset runs before every `bun test:e2e` via `globalSetup`. It prevents cross
 ```
 DATABASE_URL          # PostgreSQL connection string
 BETTER_AUTH_SECRET    # Better Auth session/cookie signing secret
-BETTER_AUTH_URL       # Better Auth base URL (http://localhost:3001)
+SERVER_URL            # Server base URL, used by Better Auth and CORS (http://localhost:3001)
 ADMIN_EMAIL           # Seeded admin user email
 ADMIN_PASSWORD        # Seeded admin user password
 CLIENT_URL            # Client origin for CORS (http://localhost:5173)
