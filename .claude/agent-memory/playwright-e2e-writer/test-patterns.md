@@ -91,7 +91,47 @@ Each test uses a fresh browser context (Playwright default with `fullyParallel: 
 
 ## Login helper convention for multi-spec projects
 
-As of the second spec file (`users.spec.ts`), `loginAs` is still duplicated per file. If a third spec needs it, extract to `e2e/helpers/auth.ts` and import from there.
+As of the third spec file (`tickets.spec.ts`), `loginAs` is still duplicated per file. If a fourth spec needs it, extract to `e2e/helpers/auth.ts` and import from there.
+
+## Tickets page selectors (e2e/tickets.spec.ts)
+
+- **Tickets page heading**: `getByRole('heading', { name: 'Tickets' })` — from Tickets.tsx h1
+- **Tickets nav link**: `getByRole('link', { name: 'Tickets' })` — visible to BOTH admin and agent roles (not admin-gated)
+- **Table rows**: `getByRole('row').filter({ hasText: subject })` to target a row by unique subject text
+- **Sender name in row**: `ticketRow.getByText(fromName)` — rendered in the "From" cell as a `<div>` inside the cell
+
+## Row position / ordering assertion
+
+To assert that one table row appears above another without relying on row indices (which shift as other tests create tickets):
+
+```typescript
+const firstRowY = (await firstRow.boundingBox())!.y
+const secondRowY = (await secondRow.boundingBox())!.y
+expect(secondRowY).toBeLessThan(firstRowY)
+```
+
+Use `.boundingBox()` rather than DOM position APIs — it works correctly in Playwright's browser context and doesn't require `evaluate()`.
+
+## Webhook helper for ticket creation in E2E tests
+
+```typescript
+async function createTicketViaWebhook(
+  request: APIRequestContext,
+  subject: string,
+  fromName = 'E2E Tester',
+) {
+  const response = await request.post(`${SERVER_URL}/api/webhooks/email`, {
+    headers: { Authorization: `Bearer ${SECRET}` },
+    data: { from: 'tester@example.com', fromName, subject, body: 'Test body' },
+  })
+  if (!response.ok()) {
+    throw new Error(`Webhook POST failed: ${response.status()} ${await response.text()}`)
+  }
+}
+```
+
+- `SERVER_URL = process.env.SERVER_URL` and `SECRET = process.env.EMAIL_WEBHOOK_SECRET` are populated from `server/.env.test` by `playwright.config.ts` via dotenv.
+- The `request` fixture comes from the test function signature alongside `page`.
 
 ## API-only (request fixture) tests — webhook spec
 

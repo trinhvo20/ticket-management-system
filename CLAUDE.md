@@ -88,7 +88,11 @@ Planned layers as routes are added:
 - `requireAuth` middleware (`src/middleware/auth.ts`) — calls `auth.api.getSession`, attaches `req.user`/`req.session`. Used by `/api/me`.
 - Seed admin: `bun db:seed` (reads `ADMIN_EMAIL`/`ADMIN_PASSWORD` from env, idempotent).
 
-### Component Testing
+### Testing strategy
+
+**Default to unit tests.** Use E2E tests only for things unit tests cannot cover.
+
+#### Unit tests (preferred)
 
 - **Stack**: Vitest + React Testing Library + jsdom, configured in `client/vite.config.ts`.
 - **Test files**: co-located with pages/components as `*.test.tsx` (e.g. `src/pages/Users.test.tsx`).
@@ -98,13 +102,13 @@ Planned layers as routes are added:
 - **TanStack Query v5 note**: `mutationFn` receives a second context argument `{ client, meta, mutationKey }` — use `expect.anything()` for that arg in `toHaveBeenCalledWith` assertions.
 - **Run**: `bun run test:unit` from root (single run), or `bun run test:run` / `bun run test` inside `/client` for single-run / watch mode. Avoid bare `bun test` at the root — Bun's native test runner picks up Playwright specs and fails.
 
-### E2E Testing
+#### E2E tests (only when necessary)
 
-Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Invoke it after implementing a significant feature, page, or user flow. Tests live in `e2e/`; run with `bun test:e2e` or `bun test:e2e:ui`.
+Write E2E tests only for things a unit test cannot cover: real browser navigation, auth redirects, role-gated nav visibility, and flows that cross the full stack (e.g. webhook → DB → UI). Do not use E2E to re-test rendering logic, loading states, error messages, or data formatting already covered by unit tests.
 
-#### Infrastructure
+Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Tests live in `e2e/`; run with `bun test:e2e` or `bun test:e2e:ui`.
 
-E2E tests run on **dedicated ports, fully isolated from the dev environment**:
+**Infrastructure** — E2E tests run on dedicated ports, isolated from dev:
 
 | Process | Dev | E2E test |
 |---|---|---|
@@ -115,20 +119,13 @@ E2E tests run on **dedicated ports, fully isolated from the dev environment**:
 - The test client runs with `bunx vite --mode e2e --port 5174`, which loads `client/.env.e2e` (`VITE_SERVER_URL=http://localhost:3099`).
 - **Never** set `reuseExistingServer: true` for the server — this would pick up the running dev server (dev DB) instead of starting a fresh test server.
 
-#### Test DB seed (`server/prisma/seed-test.ts`)
+**Test DB seed** (`server/prisma/seed-test.ts`) — wipes all users then recreates `admin@example.com` and `agent@example.com` (both `password123`). Runs before every `bun test:e2e` via `globalSetup`. The ticket table is NOT wiped — use `Date.now()`-based subjects to identify test-created rows.
 
-The seed **wipes all users** (`prisma.user.deleteMany()`) then recreates exactly two:
-- `admin@example.com` / `password123` / role `admin`
-- `agent@example.com` / `password123` / role `agent`
-
-This reset runs before every `bun test:e2e` via `globalSetup`. It prevents cross-run contamination from tests that mutate users.
-
-#### Test authoring patterns
-
-- **Login helper**: `loginAs(page, 'admin' | 'agent')` — defined locally in each spec file (do not import across specs).
-- **Never mutate seeded users** in tests. Auth tests (`auth.spec.ts`) depend on `admin@example.com` and `agent@example.com` remaining stable. If a test needs to create, edit, or delete a user, create a **throwaway user** with a unique `Date.now()`-based email and operate on that.
-- **Row-scope selectors**: filter the table row by the user's unique email before clicking action buttons — `page.getByRole('row').filter({ hasText: email }).getByRole('button', { name: 'Edit user' })`. This avoids strict-mode violations when the table has multiple rows.
-- **Exact name matching**: when asserting a name cell, use `{ name: 'Agent', exact: true }` scoped to a row, not bare `getByRole('cell', { name: 'Agent' })` — parallel tests create users whose names contain "Agent" as a substring.
+**Authoring patterns:**
+- **Login helper**: `loginAs(page, 'admin' | 'agent')` — defined locally in each spec (do not import across specs).
+- **Never mutate seeded users** — create throwaway users with unique `Date.now()`-based emails for any create/edit/delete flows.
+- **Row-scope selectors**: filter by unique text before clicking — `page.getByRole('row').filter({ hasText: email }).getByRole('button', { name: 'Edit user' })`.
+- **Exact name matching**: scope to a row and use `{ exact: true }` to avoid substring collisions from parallel tests.
 
 ### Rate Limiting
 
