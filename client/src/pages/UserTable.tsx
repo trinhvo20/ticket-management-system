@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Pencil, Trash2 } from 'lucide-react'
+import { Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
 import { Role } from '@ticket/core'
 import type { User } from '../lib/api'
@@ -24,9 +24,38 @@ interface UserTableProps {
   currentUserId: string | undefined
 }
 
+type SortKey = 'name' | 'email' | 'role' | 'createdAt'
+type SortDirection = 'asc' | 'desc'
+
 export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
   const [editingUser, setEditingUser] = useState<User | null>(null)
   const [deletingUser, setDeletingUser] = useState<User | null>(null)
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey; direction: SortDirection } | null>(null)
+
+  function handleSort(key: SortKey) {
+    setSortConfig(prev =>
+      prev?.key === key
+        ? { key, direction: prev.direction === 'asc' ? 'desc' : 'asc' }
+        : { key, direction: 'asc' }
+    )
+  }
+
+  function SortIcon({ column }: { column: SortKey }) {
+    if (sortConfig?.key !== column) return <ArrowUpDown className="h-3 w-3 opacity-50" />
+    return sortConfig.direction === 'asc'
+      ? <ArrowUp className="h-3 w-3" />
+      : <ArrowDown className="h-3 w-3" />
+  }
+
+  const sortedUsers = sortConfig
+    ? [...users].sort((a, b) => {
+        const dir = sortConfig.direction === 'asc' ? 1 : -1
+        if (sortConfig.key === 'createdAt') {
+          return (new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()) * dir
+        }
+        return a[sortConfig.key].localeCompare(b[sortConfig.key]) * dir
+      })
+    : users
 
   const deleteMutation = useMutation({
     mutationFn: (id: string) => deleteUser(id),
@@ -70,15 +99,31 @@ export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead className="px-4">Name</TableHead>
-            <TableHead className="px-4">Email</TableHead>
-            <TableHead className="px-4">Role</TableHead>
-            <TableHead className="px-4">Created</TableHead>
+            <TableHead className="px-4">
+              <button onClick={() => handleSort('name')} className="flex items-center gap-1 hover:text-foreground">
+                Name <SortIcon column="name" />
+              </button>
+            </TableHead>
+            <TableHead className="px-4">
+              <button onClick={() => handleSort('email')} className="flex items-center gap-1 hover:text-foreground">
+                Email <SortIcon column="email" />
+              </button>
+            </TableHead>
+            <TableHead className="px-4">
+              <button onClick={() => handleSort('role')} className="flex items-center gap-1 hover:text-foreground">
+                Role <SortIcon column="role" />
+              </button>
+            </TableHead>
+            <TableHead className="px-4">
+              <button onClick={() => handleSort('createdAt')} className="flex items-center gap-1 hover:text-foreground">
+                Created <SortIcon column="createdAt" />
+              </button>
+            </TableHead>
             <TableHead className="px-4" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {users.map((user) => {
+          {sortedUsers.map((user) => {
             const isSelf = user.id === currentUserId
             const isAdmin = user.role === Role.Admin
             return (
