@@ -71,6 +71,7 @@ ticketsRouter.get('/:id', requireAuth, async (req, res) => {
       status: true,
       category: true,
       createdAt: true,
+      updatedAt: true,
       assignedTo: { select: { name: true } },
     },
   })

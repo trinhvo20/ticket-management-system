@@ -95,8 +95,10 @@ export function TicketDetail() {
                 <span className="font-medium">{ticket.fromName}</span>
                 <span className="text-muted-foreground text-xs ml-2">{ticket.fromEmail}</span>
               </dd>
-              <dt className="text-muted-foreground">Received</dt>
+              <dt className="text-muted-foreground">Created</dt>
               <dd>{new Date(ticket.createdAt).toLocaleString()}</dd>
+              <dt className="text-muted-foreground">Updated</dt>
+              <dd>{new Date(ticket.updatedAt).toLocaleString()}</dd>
             </dl>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
               <dt className="text-muted-foreground">Category</dt>

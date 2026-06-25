@@ -87,6 +87,7 @@ export interface TicketPage {
 export interface TicketDetail extends Ticket {
   body: string
   bodyHtml?: string
+  updatedAt: string
   assignedTo: { name: string } | null
 }
 
