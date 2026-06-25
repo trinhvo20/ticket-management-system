@@ -47,7 +47,7 @@ const TICKET_2 = {
 
 describe('Tickets page', () => {
   beforeEach(() => {
-    vi.mocked(getTickets).mockResolvedValue([TICKET_1, TICKET_2])
+    vi.mocked(getTickets).mockResolvedValue({ tickets: [TICKET_1, TICKET_2], total: 2 })
   })
 
   // -------------------------------------------------------------------------
@@ -110,7 +110,7 @@ describe('Tickets page', () => {
 
   describe('empty state', () => {
     it('shows empty message when there are no tickets', async () => {
-      vi.mocked(getTickets).mockResolvedValue([])
+      vi.mocked(getTickets).mockResolvedValue({ tickets: [], total: 0 })
       renderWithQuery(<Tickets />)
       expect(await screen.findByText(/no tickets yet/i)).toBeInTheDocument()
     })

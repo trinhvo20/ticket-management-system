@@ -6,12 +6,25 @@ import { getTickets, ticketKeys } from '../lib/api'
 import type { TicketQueryParams } from '../lib/api'
 import { TicketTable } from './TicketTable'
 import { TicketFilters } from './TicketFilters'
+import { TicketPagination } from './TicketPagination'
+
+const PAGE_SIZE = 10
 
 export function Tickets() {
   const [sorting, setSorting] = useState<SortingState>([])
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>()
   const [categoryFilter, setCategoryFilter] = useState<TicketCategory | undefined>()
+  const [page, setPage] = useState(1)
+
+  function handleSortingChange(updater: SortingState | ((old: SortingState) => SortingState)) {
+    setSorting(updater)
+    setPage(1)
+  }
+
+  function handleSearchChange(v: string) { setSearch(v); setPage(1) }
+  function handleStatusChange(v: TicketStatus | undefined) { setStatusFilter(v); setPage(1) }
+  function handleCategoryChange(v: TicketCategory | undefined) { setCategoryFilter(v); setPage(1) }
 
   const queryParams: TicketQueryParams = {
     ...(sorting.length > 0 && {
@@ -21,16 +34,18 @@ export function Tickets() {
     ...(search && { search }),
     ...(statusFilter !== undefined && { status: statusFilter }),
     ...(categoryFilter !== undefined && { category: categoryFilter }),
+    page,
+    pageSize: PAGE_SIZE,
   }
 
-  const {
-    data: tickets = [],
-    isLoading,
-    error: fetchError,
-  } = useQuery({
+  const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ticketKeys.list(queryParams),
     queryFn: () => getTickets(queryParams),
   })
+
+  const tickets = data?.tickets ?? []
+  const total = data?.total ?? 0
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
   return (
     <div className="space-y-6">
@@ -38,21 +53,30 @@ export function Tickets() {
 
       <TicketFilters
         search={search}
-        onSearchChange={setSearch}
+        onSearchChange={handleSearchChange}
         status={statusFilter}
-        onStatusChange={setStatusFilter}
+        onStatusChange={handleStatusChange}
         category={categoryFilter}
-        onCategoryChange={setCategoryFilter}
+        onCategoryChange={handleCategoryChange}
       />
 
       {fetchError && (
         <p className="text-sm text-destructive">{(fetchError as Error).message}</p>
       )}
+
       <TicketTable
         tickets={tickets}
         isLoading={isLoading}
         sorting={sorting}
-        onSortingChange={setSorting}
+        onSortingChange={handleSortingChange}
+      />
+
+      <TicketPagination
+        page={page}
+        totalPages={totalPages}
+        total={total}
+        pageSize={PAGE_SIZE}
+        onPageChange={setPage}
       />
     </div>
   )

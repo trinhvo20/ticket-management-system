@@ -15,30 +15,39 @@ const ticketQuerySchema = z.object({
   status: z.nativeEnum(TicketStatus).optional(),
   category: z.nativeEnum(TicketCategory).optional(),
   search: z.string().optional(),
+  page: z.coerce.number().int().min(1).optional().default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
 })
 
 ticketsRouter.get('/', requireAuth, async (req, res) => {
   const query = parseBody(ticketQuerySchema, req.query, res)
   if (!query) return
 
-  const tickets = await prisma.ticket.findMany({
-    select: {
-      id: true,
-      subject: true,
-      fromEmail: true,
-      fromName: true,
-      status: true,
-      category: true,
-      assignedToId: true,
-      createdAt: true,
-    },
-    where: {
-      ...(query.status !== undefined && { status: query.status }),
-      ...(query.category !== undefined && { category: query.category }),
-      ...(query.search && { subject: { contains: query.search, mode: 'insensitive' } }),
-    },
-    orderBy: { [query.sortBy]: query.sortOrder } as Prisma.TicketOrderByWithRelationInput,
-  })
+  const where: Prisma.TicketWhereInput = {
+    ...(query.status !== undefined && { status: query.status }),
+    ...(query.category !== undefined && { category: query.category }),
+    ...(query.search && { subject: { contains: query.search, mode: 'insensitive' } }),
+  }
 
-  res.json({ tickets })
+  const [tickets, total] = await prisma.$transaction([
+    prisma.ticket.findMany({
+      select: {
+        id: true,
+        subject: true,
+        fromEmail: true,
+        fromName: true,
+        status: true,
+        category: true,
+        assignedToId: true,
+        createdAt: true,
+      },
+      where,
+      orderBy: { [query.sortBy]: query.sortOrder } as Prisma.TicketOrderByWithRelationInput,
+      skip: (query.page - 1) * query.pageSize,
+      take: query.pageSize,
+    }),
+    prisma.ticket.count({ where }),
+  ])
+
+  res.json({ tickets, total })
 })

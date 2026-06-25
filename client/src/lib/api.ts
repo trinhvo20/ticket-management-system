@@ -75,6 +75,13 @@ export interface TicketQueryParams {
   status?: TicketStatus
   category?: TicketCategory
   search?: string
+  page?: number
+  pageSize?: number
+}
+
+export interface TicketPage {
+  tickets: Ticket[]
+  total: number
 }
 
 export const ticketKeys = {
@@ -82,15 +89,17 @@ export const ticketKeys = {
   list: (params: TicketQueryParams) => ['tickets', 'list', params] as const,
 }
 
-export async function getTickets(params: TicketQueryParams = {}): Promise<Ticket[]> {
-  const { data } = await api.get<{ tickets: Ticket[] }>('/api/tickets', {
+export async function getTickets(params: TicketQueryParams = {}): Promise<TicketPage> {
+  const { data } = await api.get<TicketPage>('/api/tickets', {
     params: {
       sortBy: params.sortBy,
       sortOrder: params.sortOrder,
       status: params.status,
       category: params.category,
       search: params.search,
+      page: params.page,
+      pageSize: params.pageSize,
     },
   })
-  return data.tickets
+  return data
 }
