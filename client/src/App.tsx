@@ -3,6 +3,7 @@ import { Login } from './pages/Login'
 import { Home } from './pages/Home'
 import { Users } from './pages/Users'
 import { Tickets } from './pages/Tickets'
+import { TicketDetail } from './pages/TicketDetail'
 import { Layout } from './components/Layout'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
@@ -27,6 +28,16 @@ function App() {
             <ProtectedRoute>
               <Layout>
                 <Tickets />
+              </Layout>
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/tickets/:id"
+          element={
+            <ProtectedRoute>
+              <Layout>
+                <TicketDetail />
               </Layout>
             </ProtectedRoute>
           }

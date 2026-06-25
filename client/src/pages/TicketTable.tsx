@@ -6,8 +6,9 @@ import {
 } from '@tanstack/react-table'
 import type { SortingState, OnChangeFn } from '@tanstack/react-table'
 import { ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
-import { TicketStatus, TicketCategory } from '@ticket/core'
+import { Link } from 'react-router'
 import type { Ticket } from '../lib/api'
+import { StatusBadge, formatCategory } from '../lib/ticket-utils'
 import { Card } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
 import {
@@ -19,23 +20,6 @@ import {
   TableRow,
 } from '@/components/ui/table'
 
-function StatusBadge({ status }: { status: TicketStatus }) {
-  const styles: Record<TicketStatus, string> = {
-    [TicketStatus.Open]: 'bg-blue-100 text-blue-700',
-    [TicketStatus.Resolved]: 'bg-green-100 text-green-700',
-    [TicketStatus.Closed]: 'bg-gray-100 text-gray-600',
-  }
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
-      {status}
-    </span>
-  )
-}
-
-function formatCategory(category: TicketCategory | null) {
-  if (!category) return '—'
-  return category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
-}
 
 const columnHelper = createColumnHelper<Ticket>()
 
@@ -43,6 +27,14 @@ const columns = [
 columnHelper.accessor('subject', {
     header: 'Subject',
     enableSorting: true,
+    cell: ({ row }) => (
+      <Link
+        to={`/tickets/${row.original.id}`}
+        className="font-medium text-link"
+      >
+        {row.original.subject}
+      </Link>
+    ),
   }),
   columnHelper.accessor('fromName', {
     header: 'From',

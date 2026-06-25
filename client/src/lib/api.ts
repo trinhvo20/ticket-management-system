@@ -84,9 +84,21 @@ export interface TicketPage {
   total: number
 }
 
+export interface TicketDetail extends Ticket {
+  body: string
+  bodyHtml?: string
+  assignedTo: { name: string } | null
+}
+
 export const ticketKeys = {
   all: ['tickets'] as const,
   list: (params: TicketQueryParams) => ['tickets', 'list', params] as const,
+  detail: (id: number) => ['tickets', 'detail', id] as const,
+}
+
+export async function getTicket(id: number): Promise<TicketDetail> {
+  const { data } = await api.get<{ ticket: TicketDetail }>(`/api/tickets/${id}`)
+  return data.ticket
 }
 
 export async function getTickets(params: TicketQueryParams = {}): Promise<TicketPage> {

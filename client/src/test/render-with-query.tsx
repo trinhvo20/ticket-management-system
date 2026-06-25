@@ -1,5 +1,6 @@
 import { render, type RenderOptions } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { MemoryRouter } from 'react-router'
 import type { ReactElement } from 'react'
 
 export function renderWithQuery(ui: ReactElement, options?: RenderOptions) {
@@ -10,7 +11,9 @@ export function renderWithQuery(ui: ReactElement, options?: RenderOptions) {
     },
   })
   return render(
-    <QueryClientProvider client={qc}>{ui}</QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={qc}>{ui}</QueryClientProvider>
+    </MemoryRouter>,
     options,
   )
 }
