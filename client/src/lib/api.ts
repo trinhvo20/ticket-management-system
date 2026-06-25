@@ -69,19 +69,28 @@ export interface Ticket {
   createdAt: string
 }
 
-export interface TicketSortParams {
+export interface TicketQueryParams {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
+  status?: TicketStatus
+  category?: TicketCategory
+  search?: string
 }
 
 export const ticketKeys = {
   all: ['tickets'] as const,
-  list: (params: TicketSortParams) => ['tickets', 'list', params] as const,
+  list: (params: TicketQueryParams) => ['tickets', 'list', params] as const,
 }
 
-export async function getTickets(params: TicketSortParams = {}): Promise<Ticket[]> {
+export async function getTickets(params: TicketQueryParams = {}): Promise<Ticket[]> {
   const { data } = await api.get<{ tickets: Ticket[] }>('/api/tickets', {
-    params: { sortBy: params.sortBy, sortOrder: params.sortOrder },
+    params: {
+      sortBy: params.sortBy,
+      sortOrder: params.sortOrder,
+      status: params.status,
+      category: params.category,
+      search: params.search,
+    },
   })
   return data.tickets
 }
