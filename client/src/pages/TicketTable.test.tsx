@@ -1,5 +1,6 @@
 import { screen } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
+import type { SortingState } from '@tanstack/react-table'
 import { TicketStatus, TicketCategory } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { TicketTable } from './TicketTable'
@@ -42,6 +43,8 @@ const TICKET_CLOSED: Ticket = {
   createdAt: '2024-01-03T00:00:00.000Z',
 }
 
+const noopSorting = { sorting: [] as SortingState, onSortingChange: () => {} }
+
 // ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
@@ -53,12 +56,12 @@ describe('TicketTable', () => {
 
   describe('loading state', () => {
     it('renders 4 skeleton rows plus a header row while loading', () => {
-      renderWithQuery(<TicketTable tickets={[]} isLoading />)
+      renderWithQuery(<TicketTable tickets={[]} isLoading {...noopSorting} />)
       expect(screen.getAllByRole('row')).toHaveLength(5)
     })
 
     it('does not show ticket data while loading', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading />)
+      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading {...noopSorting} />)
       expect(screen.queryByText('Billing issue')).not.toBeInTheDocument()
     })
   })
@@ -69,18 +72,13 @@ describe('TicketTable', () => {
 
   describe('ticket rows', () => {
     it('renders a row for each ticket', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN, TICKET_RESOLVED]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_OPEN, TICKET_RESOLVED]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('Billing issue')).toBeInTheDocument()
       expect(screen.getByText('Technical problem')).toBeInTheDocument()
     })
 
-    it('shows the ticket id', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} />)
-      expect(screen.getByText('1')).toBeInTheDocument()
-    })
-
     it('shows sender name and email', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('Alice')).toBeInTheDocument()
       expect(screen.getByText('alice@example.com')).toBeInTheDocument()
     })
@@ -92,17 +90,17 @@ describe('TicketTable', () => {
 
   describe('status badge', () => {
     it('renders "open" for open tickets', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('open')).toBeInTheDocument()
     })
 
     it('renders "resolved" for resolved tickets', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_RESOLVED]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_RESOLVED]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('resolved')).toBeInTheDocument()
     })
 
     it('renders "closed" for closed tickets', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_CLOSED]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_CLOSED]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('closed')).toBeInTheDocument()
     })
   })
@@ -113,22 +111,22 @@ describe('TicketTable', () => {
 
   describe('category formatting', () => {
     it('formats general_question as "General Question"', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('General Question')).toBeInTheDocument()
     })
 
     it('formats technical_question as "Technical Question"', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_RESOLVED]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_RESOLVED]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('Technical Question')).toBeInTheDocument()
     })
 
     it('formats refund_request as "Refund Request"', () => {
-      renderWithQuery(<TicketTable tickets={[TICKET_CLOSED]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[TICKET_CLOSED]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('Refund Request')).toBeInTheDocument()
     })
 
     it('shows "—" when category is null', () => {
-      renderWithQuery(<TicketTable tickets={[{ ...TICKET_OPEN, category: null }]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[{ ...TICKET_OPEN, category: null }]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText('—')).toBeInTheDocument()
     })
   })
@@ -139,7 +137,7 @@ describe('TicketTable', () => {
 
   describe('empty state', () => {
     it('shows "No tickets yet." when the tickets array is empty', () => {
-      renderWithQuery(<TicketTable tickets={[]} isLoading={false} />)
+      renderWithQuery(<TicketTable tickets={[]} isLoading={false} {...noopSorting} />)
       expect(screen.getByText(/no tickets yet/i)).toBeInTheDocument()
     })
   })
