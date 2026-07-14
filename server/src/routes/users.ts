@@ -8,6 +8,16 @@ import { requireAuth, requireAdmin } from '../middleware/auth'
 
 export const usersRouter = Router()
 
+// Get all agents (for ticket assignment dropdown)
+usersRouter.get('/agents', requireAuth, async (_req, res) => {
+  const agents = await prisma.user.findMany({
+    where: { role: Role.agent, deletedAt: null },
+    select: { id: true, name: true },
+    orderBy: { name: 'asc' },
+  })
+  res.json({ agents })
+})
+
 // Get all users
 usersRouter.get('/', requireAuth, requireAdmin, async (_req, res) => {
   const users = await prisma.user.findMany({

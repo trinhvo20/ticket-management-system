@@ -1,7 +1,7 @@
 import { useParams, Link } from 'react-router'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useMutation } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
-import { getTicket, ticketKeys } from '../lib/api'
+import { getTicket, getAgents, assignTicket, ticketKeys, agentKeys, queryClient } from '../lib/api'
 import { StatusBadge, formatCategory } from '../lib/ticket-utils'
 import { Button } from '@/components/ui/button'
 import {
@@ -13,7 +13,13 @@ import {
 } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Skeleton } from '@/components/ui/skeleton'
-
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
 
 function TicketDetailSkeleton() {
   return (
@@ -46,6 +52,17 @@ export function TicketDetail() {
     queryKey: ticketKeys.detail(ticketId),
     queryFn: () => getTicket(ticketId),
     enabled: !isNaN(ticketId),
+  })
+
+  const { data: agents = [] } = useQuery({
+    queryKey: agentKeys.all,
+    queryFn: getAgents,
+    enabled: !isNaN(ticketId),
+  })
+
+  const assignMutation = useMutation({
+    mutationFn: (assignedToId: string | null) => assignTicket(ticketId, assignedToId),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ticketKeys.detail(ticketId) }),
   })
 
   if (isNaN(ticketId)) {
@@ -100,11 +117,29 @@ export function TicketDetail() {
               <dt className="text-muted-foreground">Updated</dt>
               <dd>{new Date(ticket.updatedAt).toLocaleString()}</dd>
             </dl>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2">
+            <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 items-center">
               <dt className="text-muted-foreground">Category</dt>
               <dd>{formatCategory(ticket.category)}</dd>
               <dt className="text-muted-foreground">Assigned To</dt>
-              <dd>{ticket.assignedTo?.name ?? '—'}</dd>
+              <dd>
+                <Select
+                  value={ticket.assignedTo?.id ?? '__unassigned__'}
+                  onValueChange={(val) => assignMutation.mutate(val === '__unassigned__' ? null : val)}
+                  disabled={assignMutation.isPending}
+                >
+                  <SelectTrigger size="sm" className="w-full">
+                    <SelectValue placeholder="Unassigned" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="__unassigned__">Unassigned</SelectItem>
+                    {agents.map((agent) => (
+                      <SelectItem key={agent.id} value={agent.id}>
+                        {agent.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </dd>
             </dl>
           </div>
 

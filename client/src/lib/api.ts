@@ -88,13 +88,31 @@ export interface TicketDetail extends Ticket {
   body: string
   bodyHtml?: string
   updatedAt: string
-  assignedTo: { name: string } | null
+  assignedTo: { id: string; name: string } | null
+}
+
+export interface Agent {
+  id: string
+  name: string
+}
+
+export const agentKeys = {
+  all: ['agents'] as const,
 }
 
 export const ticketKeys = {
   all: ['tickets'] as const,
   list: (params: TicketQueryParams) => ['tickets', 'list', params] as const,
   detail: (id: number) => ['tickets', 'detail', id] as const,
+}
+
+export async function getAgents(): Promise<Agent[]> {
+  const { data } = await api.get<{ agents: Agent[] }>('/api/users/agents')
+  return data.agents
+}
+
+export async function assignTicket(id: number, assignedToId: string | null): Promise<void> {
+  await api.patch(`/api/tickets/${id}`, { assignedToId })
 }
 
 export async function getTicket(id: number): Promise<TicketDetail> {

@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { Prisma, TicketStatus, TicketCategory } from '@prisma/client'
+import { assignTicketSchema } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
 import { parseBody } from '../lib/parse-body'
@@ -19,6 +20,7 @@ const ticketQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
 })
 
+// Get a list of tickets with optional filtering, sorting, and pagination
 ticketsRouter.get('/', requireAuth, async (req, res) => {
   const query = parseBody(ticketQuerySchema, req.query, res)
   if (!query) return
@@ -52,6 +54,7 @@ ticketsRouter.get('/', requireAuth, async (req, res) => {
   res.json({ tickets, total })
 })
 
+// Get a specific ticket
 ticketsRouter.get('/:id', requireAuth, async (req, res) => {
   const id = parseInt(req.params['id'] as string, 10)
   if (isNaN(id)) {
@@ -72,7 +75,7 @@ ticketsRouter.get('/:id', requireAuth, async (req, res) => {
       category: true,
       createdAt: true,
       updatedAt: true,
-      assignedTo: { select: { name: true } },
+      assignedTo: { select: { id: true, name: true } },
     },
   })
 
@@ -82,4 +85,42 @@ ticketsRouter.get('/:id', requireAuth, async (req, res) => {
   }
 
   res.json({ ticket })
+})
+
+// Update a ticket's assigned agent
+ticketsRouter.patch('/:id', requireAuth, async (req, res) => {
+  const id = parseInt(req.params['id'] as string, 10)
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Invalid ticket ID' })
+    return
+  }
+
+  const data = parseBody(assignTicketSchema, req.body, res)
+  if (!data) return
+
+  if (data.assignedToId !== null) {
+    const user = await prisma.user.findUnique({
+      where: { id: data.assignedToId },
+      select: { id: true, deletedAt: true },
+    })
+    if (!user || user.deletedAt) {
+      res.status(400).json({ error: 'Assigned user not found' })
+      return
+    }
+  }
+
+  try {
+    const ticket = await prisma.ticket.update({
+      where: { id },
+      data: { assignedToId: data.assignedToId },
+      select: { id: true, assignedTo: { select: { id: true, name: true } } },
+    })
+    res.json({ ticket })
+  } catch (err: any) {
+    if (err.code === 'P2025') {
+      res.status(404).json({ error: 'Ticket not found' })
+      return
+    }
+    throw err
+  }
 })
