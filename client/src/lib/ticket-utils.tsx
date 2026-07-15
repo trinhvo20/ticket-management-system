@@ -8,26 +8,29 @@ export function StatusBadge({ status }: { status: TicketStatus }) {
   }
   return (
     <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${styles[status]}`}>
-      {status}
+      {formatStatus(status)}
     </span>
   )
 }
 
-export function CategoryBadge({ category }: { category: TicketCategory | null }) {
-  if (!category) return null
-  const styles: Record<TicketCategory, string> = {
-    [TicketCategory.GeneralQuestion]: 'bg-purple-100 text-purple-700',
-    [TicketCategory.TechnicalQuestion]: 'bg-orange-100 text-orange-700',
-    [TicketCategory.RefundRequest]: 'bg-rose-100 text-rose-700',
-  }
-  return (
-    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${styles[category]}`}>
-      {formatCategory(category)}
-    </span>
-  )
+
+const CATEGORY_LABELS: Record<TicketCategory, string> = {
+  [TicketCategory.GeneralQuestion]: 'General Question',
+  [TicketCategory.TechnicalQuestion]: 'Technical Question',
+  [TicketCategory.RefundRequest]: 'Refund Request',
 }
 
 export function formatCategory(category: TicketCategory | null) {
   if (!category) return '—'
-  return category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
+  return CATEGORY_LABELS[category]
+}
+
+const STATUS_LABELS: Record<TicketStatus, string> = {
+  [TicketStatus.Open]: 'Open',
+  [TicketStatus.Resolved]: 'Resolved',
+  [TicketStatus.Closed]: 'Closed',
+}
+
+export function formatStatus(status: TicketStatus) {
+  return STATUS_LABELS[status]
 }

@@ -89,19 +89,19 @@ describe('TicketTable', () => {
   // -------------------------------------------------------------------------
 
   describe('status badge', () => {
-    it('renders "open" for open tickets', () => {
+    it('renders "Open" for open tickets', () => {
       renderWithQuery(<TicketTable tickets={[TICKET_OPEN]} isLoading={false} {...noopSorting} />)
-      expect(screen.getByText('open')).toBeInTheDocument()
+      expect(screen.getByText('Open')).toBeInTheDocument()
     })
 
-    it('renders "resolved" for resolved tickets', () => {
+    it('renders "Resolved" for resolved tickets', () => {
       renderWithQuery(<TicketTable tickets={[TICKET_RESOLVED]} isLoading={false} {...noopSorting} />)
-      expect(screen.getByText('resolved')).toBeInTheDocument()
+      expect(screen.getByText('Resolved')).toBeInTheDocument()
     })
 
-    it('renders "closed" for closed tickets', () => {
+    it('renders "Closed" for closed tickets', () => {
       renderWithQuery(<TicketTable tickets={[TICKET_CLOSED]} isLoading={false} {...noopSorting} />)
-      expect(screen.getByText('closed')).toBeInTheDocument()
+      expect(screen.getByText('Closed')).toBeInTheDocument()
     })
   })
 

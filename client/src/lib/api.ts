@@ -111,8 +111,11 @@ export async function getAgents(): Promise<Agent[]> {
   return data.agents
 }
 
-export async function assignTicket(id: number, assignedToId: string | null): Promise<void> {
-  await api.patch(`/api/tickets/${id}`, { assignedToId })
+export async function updateTicket(
+  id: number,
+  payload: { status?: TicketStatus; category?: TicketCategory | null; assignedToId?: string | null }
+): Promise<void> {
+  await api.patch(`/api/tickets/${id}`, payload)
 }
 
 export async function getTicket(id: number): Promise<TicketDetail> {

@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { TicketStatus, TicketCategory } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { TicketDetail } from './TicketDetail'
-import { getTicket, getAgents, assignTicket } from '../lib/api'
+import { getTicket, getAgents, updateTicket } from '../lib/api'
 
 // ---------------------------------------------------------------------------
 // Radix UI Select requires these to work in jsdom
@@ -28,7 +28,7 @@ vi.mock('react-router', async () => ({
 vi.mock('../lib/api', () => ({
   getTicket: vi.fn(),
   getAgents: vi.fn(),
-  assignTicket: vi.fn(),
+  updateTicket: vi.fn(),
   ticketKeys: { detail: (id: number) => ['tickets', 'detail', id] },
   agentKeys: { all: ['agents'] },
   queryClient: { invalidateQueries: vi.fn() },
@@ -80,7 +80,7 @@ describe('TicketDetail', () => {
   beforeEach(() => {
     vi.mocked(getTicket).mockResolvedValue(TICKET_UNASSIGNED)
     vi.mocked(getAgents).mockResolvedValue(AGENTS)
-    vi.mocked(assignTicket).mockResolvedValue(undefined)
+    vi.mocked(updateTicket).mockResolvedValue(undefined)
   })
 
   // -------------------------------------------------------------------------
@@ -124,11 +124,6 @@ describe('TicketDetail', () => {
       expect(await screen.findByText('Login is broken')).toBeInTheDocument()
     })
 
-    it('shows the status badge', async () => {
-      renderDetail()
-      expect(await screen.findByText('open')).toBeInTheDocument()
-    })
-
     it('shows sender name and email', async () => {
       renderDetail()
       await screen.findByText('Login is broken')
@@ -136,14 +131,89 @@ describe('TicketDetail', () => {
       expect(screen.getByText('alice@example.com')).toBeInTheDocument()
     })
 
-    it('shows the formatted category', async () => {
-      renderDetail()
-      expect(await screen.findByText('Technical Question')).toBeInTheDocument()
-    })
-
     it('shows the message body', async () => {
       renderDetail()
       expect(await screen.findByText('I cannot log in since this morning.')).toBeInTheDocument()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Status dropdown — display
+  // -------------------------------------------------------------------------
+
+  describe('status dropdown display', () => {
+    it('shows the current status in the trigger', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const combos = screen.getAllByRole('combobox')
+      expect(combos[0]).toHaveTextContent('Open')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Status dropdown — interaction
+  // -------------------------------------------------------------------------
+
+  describe('status dropdown interaction', () => {
+    it('calls updateTicket with the new status when changed', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const [statusCombo] = screen.getAllByRole('combobox')
+      await userEvent.click(statusCombo)
+      await userEvent.click(await screen.findByRole('option', { name: 'Resolved' }))
+      await waitFor(() =>
+        expect(updateTicket).toHaveBeenCalledWith(1, { status: TicketStatus.Resolved })
+      )
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Category dropdown — display
+  // -------------------------------------------------------------------------
+
+  describe('category dropdown display', () => {
+    it('shows the current category in the trigger', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const combos = screen.getAllByRole('combobox')
+      expect(combos[1]).toHaveTextContent('Technical Question')
+    })
+
+    it('shows "None" when category is null', async () => {
+      vi.mocked(getTicket).mockResolvedValue({ ...TICKET_UNASSIGNED, category: null })
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const combos = screen.getAllByRole('combobox')
+      expect(combos[1]).toHaveTextContent('None')
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Category dropdown — interaction
+  // -------------------------------------------------------------------------
+
+  describe('category dropdown interaction', () => {
+    it('calls updateTicket with null when None is selected', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[1])
+      await userEvent.click(await screen.findByRole('option', { name: 'None' }))
+      await waitFor(() =>
+        expect(updateTicket).toHaveBeenCalledWith(1, { category: null })
+      )
+    })
+
+    it('calls updateTicket with the new category when changed', async () => {
+      vi.mocked(getTicket).mockResolvedValue({ ...TICKET_UNASSIGNED, category: null })
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[1])
+      await userEvent.click(await screen.findByRole('option', { name: 'Refund Request' }))
+      await waitFor(() =>
+        expect(updateTicket).toHaveBeenCalledWith(1, { category: TicketCategory.RefundRequest })
+      )
     })
   })
 
@@ -155,14 +225,16 @@ describe('TicketDetail', () => {
     it('shows "Unassigned" in the trigger when no agent is assigned', async () => {
       renderDetail()
       await screen.findByText('Login is broken')
-      expect(screen.getByRole('combobox')).toHaveTextContent('Unassigned')
+      const combos = screen.getAllByRole('combobox')
+      expect(combos[2]).toHaveTextContent('Unassigned')
     })
 
     it('shows the assigned agent name in the trigger', async () => {
       vi.mocked(getTicket).mockResolvedValue(TICKET_ASSIGNED)
       renderDetail()
       await screen.findByText('Login is broken')
-      expect(screen.getByRole('combobox')).toHaveTextContent('Bob')
+      const combos = screen.getAllByRole('combobox')
+      expect(combos[2]).toHaveTextContent('Bob')
     })
   })
 
@@ -174,38 +246,42 @@ describe('TicketDetail', () => {
     it('lists all agents and an Unassigned option when opened', async () => {
       renderDetail()
       await screen.findByText('Login is broken')
-      await userEvent.click(screen.getByRole('combobox'))
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[2])
       expect(await screen.findByRole('option', { name: 'Unassigned' })).toBeInTheDocument()
       expect(screen.getByRole('option', { name: 'Bob' })).toBeInTheDocument()
       expect(screen.getByRole('option', { name: 'Carol' })).toBeInTheDocument()
     })
 
-    it('calls assignTicket with the agent id when an agent is selected', async () => {
+    it('calls updateTicket with the agent id when an agent is selected', async () => {
       renderDetail()
       await screen.findByText('Login is broken')
-      await userEvent.click(screen.getByRole('combobox'))
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[2])
       await userEvent.click(await screen.findByRole('option', { name: 'Bob' }))
       await waitFor(() =>
-        expect(assignTicket).toHaveBeenCalledWith(1, 'agent-1')
+        expect(updateTicket).toHaveBeenCalledWith(1, { assignedToId: 'agent-1' })
       )
     })
 
-    it('calls assignTicket with null when Unassigned is selected', async () => {
+    it('calls updateTicket with null when Unassigned is selected', async () => {
       vi.mocked(getTicket).mockResolvedValue(TICKET_ASSIGNED)
       renderDetail()
       await screen.findByText('Login is broken')
-      await userEvent.click(screen.getByRole('combobox'))
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[2])
       await userEvent.click(await screen.findByRole('option', { name: 'Unassigned' }))
       await waitFor(() =>
-        expect(assignTicket).toHaveBeenCalledWith(1, null)
+        expect(updateTicket).toHaveBeenCalledWith(1, { assignedToId: null })
       )
     })
 
-    it('invalidates the ticket query after a successful assignment', async () => {
+    it('invalidates the ticket query after a successful update', async () => {
       const { queryClient } = await import('../lib/api')
       renderDetail()
       await screen.findByText('Login is broken')
-      await userEvent.click(screen.getByRole('combobox'))
+      const combos = screen.getAllByRole('combobox')
+      await userEvent.click(combos[2])
       await userEvent.click(await screen.findByRole('option', { name: 'Bob' }))
       await waitFor(() =>
         expect(queryClient.invalidateQueries).toHaveBeenCalledWith({

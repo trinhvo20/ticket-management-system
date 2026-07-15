@@ -89,8 +89,8 @@ describe('Tickets page', () => {
 
     it('displays status badges', async () => {
       renderWithQuery(<Tickets />)
-      await screen.findByText('open')
-      expect(screen.getByText('resolved')).toBeInTheDocument()
+      await screen.findByText('Open')
+      expect(screen.getByText('Resolved')).toBeInTheDocument()
     })
 
     it('formats category from snake_case to Title Case', async () => {
