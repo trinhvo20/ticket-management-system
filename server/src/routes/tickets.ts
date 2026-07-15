@@ -1,6 +1,7 @@
 import { Router } from 'express'
 import { z } from 'zod'
 import { Prisma, TicketStatus, TicketCategory } from '@prisma/client'
+import { createReplySchema } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
 import { parseBody } from '../lib/parse-body'
@@ -137,4 +138,57 @@ ticketsRouter.patch('/:id', requireAuth, async (req, res) => {
     }
     throw err
   }
+})
+
+// Get all replies for a ticket
+ticketsRouter.get('/:id/replies', requireAuth, async (req, res) => {
+  const id = parseInt(req.params['id'] as string, 10)
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Invalid ticket ID' })
+    return
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id }, select: { id: true } })
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' })
+    return
+  }
+  
+  const replies = await prisma.ticketReply.findMany({
+    where: { ticketId: id },
+    include: { author: { select: { id: true, name: true } } },
+    orderBy: { createdAt: 'asc' },
+  })
+
+  res.json(replies)
+})
+
+// Create a reply on a ticket
+ticketsRouter.post('/:id/replies', requireAuth, async (req, res) => {
+  const id = parseInt(req.params['id'] as string, 10)
+  if (isNaN(id)) {
+    res.status(400).json({ error: 'Invalid ticket ID' })
+    return
+  }
+
+  const ticket = await prisma.ticket.findUnique({ where: { id }, select: { id: true } })
+  if (!ticket) {
+    res.status(404).json({ error: 'Ticket not found' })
+    return
+  }
+
+  const data = parseBody(createReplySchema, req.body, res)
+  if (!data) return
+
+  const reply = await prisma.ticketReply.create({
+    data: {
+      ticketId: id,
+      senderType: 'agent',
+      authorId: req.user!.id,
+      body: data.body,
+    },
+    include: { author: { select: { id: true, name: true } } },
+  })
+
+  res.status(201).json(reply)
 })

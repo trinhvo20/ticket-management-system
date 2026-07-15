@@ -96,6 +96,15 @@ export interface Agent {
   name: string
 }
 
+export interface TicketReply {
+  id: number
+  ticketId: number
+  senderType: 'agent' | 'customer'
+  body: string
+  createdAt: string
+  author: { id: string; name: string } | null
+}
+
 export const agentKeys = {
   all: ['agents'] as const,
 }
@@ -104,6 +113,10 @@ export const ticketKeys = {
   all: ['tickets'] as const,
   list: (params: TicketQueryParams) => ['tickets', 'list', params] as const,
   detail: (id: number) => ['tickets', 'detail', id] as const,
+}
+
+export const replyKeys = {
+  all: (ticketId: number) => ['tickets', ticketId, 'replies'] as const,
 }
 
 export async function getAgents(): Promise<Agent[]> {
@@ -121,6 +134,16 @@ export async function updateTicket(
 export async function getTicket(id: number): Promise<TicketDetail> {
   const { data } = await api.get<{ ticket: TicketDetail }>(`/api/tickets/${id}`)
   return data.ticket
+}
+
+export async function getReplies(ticketId: number): Promise<TicketReply[]> {
+  const { data } = await api.get<TicketReply[]>(`/api/tickets/${ticketId}/replies`)
+  return data
+}
+
+export async function createReply(ticketId: number, body: string): Promise<TicketReply> {
+  const { data } = await api.post<TicketReply>(`/api/tickets/${ticketId}/replies`, { body })
+  return data
 }
 
 export async function getTickets(params: TicketQueryParams = {}): Promise<TicketPage> {

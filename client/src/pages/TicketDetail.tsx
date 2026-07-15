@@ -2,8 +2,19 @@ import { useParams, Link } from 'react-router'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { TicketStatus, TicketCategory } from '@ticket/core'
-import { getTicket, getAgents, updateTicket, ticketKeys, agentKeys, queryClient } from '../lib/api'
+import {
+  getTicket,
+  getAgents,
+  updateTicket,
+  getReplies,
+  ticketKeys,
+  agentKeys,
+  replyKeys,
+  queryClient,
+} from '../lib/api'
 import { formatCategory, formatStatus } from '../lib/ticket-utils'
+import { ReplyList } from '../components/ReplyList'
+import { ReplyForm } from '../components/ReplyForm'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -65,6 +76,12 @@ export function TicketDetail() {
   const { data: agents = [] } = useQuery({
     queryKey: agentKeys.all,
     queryFn: getAgents,
+    enabled: !isNaN(ticketId),
+  })
+
+  const { data: replies = [] } = useQuery({
+    queryKey: replyKeys.all(ticketId),
+    queryFn: () => getReplies(ticketId),
     enabled: !isNaN(ticketId),
   })
 
@@ -220,6 +237,13 @@ export function TicketDetail() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Reply thread + form */}
+      <div className="space-y-3">
+        <h2 className="text-sm font-semibold">Replies</h2>
+        <ReplyList replies={replies} fromName={ticket.fromName} />
+        <ReplyForm ticketId={ticketId} />
+      </div>
     </div>
   )
 }

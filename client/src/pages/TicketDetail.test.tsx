@@ -4,7 +4,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
 import { TicketStatus, TicketCategory } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { TicketDetail } from './TicketDetail'
-import { getTicket, getAgents, updateTicket } from '../lib/api'
+import { getTicket, getAgents, updateTicket, getReplies, createReply } from '../lib/api'
 
 // ---------------------------------------------------------------------------
 // Radix UI Select requires these to work in jsdom
@@ -29,8 +29,11 @@ vi.mock('../lib/api', () => ({
   getTicket: vi.fn(),
   getAgents: vi.fn(),
   updateTicket: vi.fn(),
+  getReplies: vi.fn(),
+  createReply: vi.fn(),
   ticketKeys: { detail: (id: number) => ['tickets', 'detail', id] },
   agentKeys: { all: ['agents'] },
+  replyKeys: { all: (id: number) => ['tickets', id, 'replies'] },
   queryClient: { invalidateQueries: vi.fn() },
 }))
 
@@ -64,6 +67,24 @@ const AGENTS = [
   { id: 'agent-2', name: 'Carol' },
 ]
 
+const REPLY_AGENT = {
+  id: 10,
+  ticketId: 1,
+  senderType: 'agent' as const,
+  body: 'We are looking into this.',
+  createdAt: '2024-06-01T12:00:00.000Z',
+  author: { id: 'agent-1', name: 'Bob' },
+}
+
+const REPLY_CUSTOMER = {
+  id: 11,
+  ticketId: 1,
+  senderType: 'customer' as const,
+  body: 'Any updates?',
+  createdAt: '2024-06-01T13:00:00.000Z',
+  author: null,
+}
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -81,6 +102,8 @@ describe('TicketDetail', () => {
     vi.mocked(getTicket).mockResolvedValue(TICKET_UNASSIGNED)
     vi.mocked(getAgents).mockResolvedValue(AGENTS)
     vi.mocked(updateTicket).mockResolvedValue(undefined)
+    vi.mocked(getReplies).mockResolvedValue([])
+    vi.mocked(createReply).mockResolvedValue(REPLY_AGENT)
   })
 
   // -------------------------------------------------------------------------
@@ -288,6 +311,92 @@ describe('TicketDetail', () => {
           queryKey: ['tickets', 'detail', 1],
         })
       )
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Reply thread — display
+  // -------------------------------------------------------------------------
+
+  describe('reply thread display', () => {
+    it('shows "No replies yet" when there are no replies', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      expect(await screen.findByText('No replies yet.')).toBeInTheDocument()
+    })
+
+    it('renders agent reply with author name and Agent badge', async () => {
+      vi.mocked(getReplies).mockResolvedValue([REPLY_AGENT])
+      renderDetail()
+      await screen.findByText('Login is broken')
+      expect(await screen.findByText('We are looking into this.')).toBeInTheDocument()
+      expect(screen.getByText('Agent')).toBeInTheDocument()
+    })
+
+    it('renders customer reply with ticket fromName and Customer badge', async () => {
+      vi.mocked(getReplies).mockResolvedValue([REPLY_CUSTOMER])
+      renderDetail()
+      await screen.findByText('Login is broken')
+      expect(await screen.findByText('Any updates?')).toBeInTheDocument()
+      expect(screen.getByText('Customer')).toBeInTheDocument()
+      // Alice is the fromName of the ticket
+      expect(screen.getAllByText('Alice').length).toBeGreaterThan(0)
+    })
+
+    it('renders both agent and customer replies', async () => {
+      vi.mocked(getReplies).mockResolvedValue([REPLY_AGENT, REPLY_CUSTOMER])
+      renderDetail()
+      await screen.findByText('Login is broken')
+      expect(await screen.findByText('We are looking into this.')).toBeInTheDocument()
+      expect(await screen.findByText('Any updates?')).toBeInTheDocument()
+    })
+  })
+
+  // -------------------------------------------------------------------------
+  // Reply form — submit
+  // -------------------------------------------------------------------------
+
+  describe('reply form', () => {
+    it('calls createReply with the typed body on submit', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const textarea = screen.getByPlaceholderText('Write your reply…')
+      await userEvent.type(textarea, 'Hello there!')
+      await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
+      await waitFor(() =>
+        expect(createReply).toHaveBeenCalledWith(1, 'Hello there!')
+      )
+    })
+
+    it('invalidates the replies query after a successful submit', async () => {
+      const { queryClient } = await import('../lib/api')
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const textarea = screen.getByPlaceholderText('Write your reply…')
+      await userEvent.type(textarea, 'Hello there!')
+      await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
+      await waitFor(() =>
+        expect(queryClient.invalidateQueries).toHaveBeenCalledWith({
+          queryKey: ['tickets', 1, 'replies'],
+        })
+      )
+    })
+
+    it('shows a validation error when the body is empty', async () => {
+      renderDetail()
+      await screen.findByText('Login is broken')
+      await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
+      expect(await screen.findByText('Reply cannot be empty')).toBeInTheDocument()
+    })
+
+    it('shows a server error when createReply rejects', async () => {
+      vi.mocked(createReply).mockRejectedValue(new Error('Server error'))
+      renderDetail()
+      await screen.findByText('Login is broken')
+      const textarea = screen.getByPlaceholderText('Write your reply…')
+      await userEvent.type(textarea, 'Hello there!')
+      await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
+      expect(await screen.findByText('Server error')).toBeInTheDocument()
     })
   })
 })

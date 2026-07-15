@@ -12,6 +12,14 @@ export enum TicketCategory {
   RefundRequest = 'refund_request',
 }
 
+export const ReplyType = { Agent: 'agent', Customer: 'customer' } as const
+export type ReplyType = (typeof ReplyType)[keyof typeof ReplyType]
+
+export const createReplySchema = z.object({
+  body: z.string().min(1, 'Reply cannot be empty'),
+})
+export type CreateReplyInput = z.infer<typeof createReplySchema>
+
 export const inboundEmailSchema = z.object({
   from: z.string().email('Invalid sender email').max(254),
   fromName: z.string().trim().min(1, 'Sender name is required').max(255),

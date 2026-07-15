@@ -25,6 +25,7 @@ model User {
   sessions      Session[]
   accounts      Account[]
   tickets       Ticket[]
+  replies       TicketReply[]
 
   @@unique([email])
   @@map("user")
@@ -89,12 +90,32 @@ model Ticket {
   category     TicketCategory?
   assignedToId String?
   assignedTo   User?           @relation(fields: [assignedToId], references: [id])
+  replies      TicketReply[]
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
 
   @@index([status])
   @@index([createdAt])
   @@map("ticket")
+}
+
+enum ReplyType {
+  agent
+  customer
+}
+
+model TicketReply {
+  id         Int       @id @default(autoincrement())
+  ticketId   Int
+  ticket     Ticket    @relation(fields: [ticketId], references: [id])
+  senderType ReplyType
+  authorId   String?
+  author     User?     @relation(fields: [authorId], references: [id])
+  body       String
+  createdAt  DateTime  @default(now())
+
+  @@index([ticketId])
+  @@map("ticket_reply")
 }
 
 model Verification {
