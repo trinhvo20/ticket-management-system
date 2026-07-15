@@ -13,6 +13,20 @@ export function StatusBadge({ status }: { status: TicketStatus }) {
   )
 }
 
+export function CategoryBadge({ category }: { category: TicketCategory | null }) {
+  if (!category) return null
+  const styles: Record<TicketCategory, string> = {
+    [TicketCategory.GeneralQuestion]: 'bg-purple-100 text-purple-700',
+    [TicketCategory.TechnicalQuestion]: 'bg-orange-100 text-orange-700',
+    [TicketCategory.RefundRequest]: 'bg-rose-100 text-rose-700',
+  }
+  return (
+    <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${styles[category]}`}>
+      {formatCategory(category)}
+    </span>
+  )
+}
+
 export function formatCategory(category: TicketCategory | null) {
   if (!category) return '—'
   return category.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())

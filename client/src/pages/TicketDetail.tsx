@@ -2,7 +2,7 @@ import { useParams, Link } from 'react-router'
 import { useQuery, useMutation } from '@tanstack/react-query'
 import { ArrowLeft } from 'lucide-react'
 import { getTicket, getAgents, assignTicket, ticketKeys, agentKeys, queryClient } from '../lib/api'
-import { StatusBadge, formatCategory } from '../lib/ticket-utils'
+import { StatusBadge, CategoryBadge } from '../lib/ticket-utils'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -101,7 +101,10 @@ export function TicketDetail() {
         <CardHeader>
           <CardTitle>{ticket.subject}</CardTitle>
           <CardAction>
-            <StatusBadge status={ticket.status} />
+            <div className="flex items-center gap-2">
+              <CategoryBadge category={ticket.category} />
+              <StatusBadge status={ticket.status} />
+            </div>
           </CardAction>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -114,12 +117,8 @@ export function TicketDetail() {
               </dd>
               <dt className="text-muted-foreground">Created</dt>
               <dd>{new Date(ticket.createdAt).toLocaleString()}</dd>
-              <dt className="text-muted-foreground">Updated</dt>
-              <dd>{new Date(ticket.updatedAt).toLocaleString()}</dd>
             </dl>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 items-center">
-              <dt className="text-muted-foreground">Category</dt>
-              <dd>{formatCategory(ticket.category)}</dd>
               <dt className="text-muted-foreground">Assigned To</dt>
               <dd>
                 <Select
@@ -140,6 +139,8 @@ export function TicketDetail() {
                   </SelectContent>
                 </Select>
               </dd>
+              <dt className="text-muted-foreground">Updated</dt>
+              <dd>{new Date(ticket.updatedAt).toLocaleString()}</dd>
             </dl>
           </div>
 
