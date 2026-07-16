@@ -8,10 +8,39 @@ export const webhooksRouter = Router()
 
 webhooksRouter.use(webhookAuth)
 
-// Create ticket
+function normalizeSubject(s: string): string {
+  return s.replace(/^(re:\s*)+/i, '').trim()
+}
+
+// Handle inbound support email: thread as customer reply if an open ticket exists, otherwise create a new ticket
 webhooksRouter.post('/', async (req, res) => {
   const data = parseBody(inboundEmailSchema, req.body, res)
   if (!data) return
+
+  const normalized = normalizeSubject(data.subject)
+
+  const existingTicket = await prisma.ticket.findFirst({
+    where: {
+      fromEmail: data.from,
+      status: 'open',
+      subject: { equals: normalized, mode: 'insensitive' },
+    },
+    orderBy: { createdAt: 'desc' },
+    select: { id: true },
+  })
+
+  if (existingTicket) {
+    const reply = await prisma.ticketReply.create({
+      data: {
+        ticketId: existingTicket.id,
+        senderType: 'customer',
+        authorId: null,
+        body: data.body,
+      },
+    })
+    res.status(201).json({ type: 'reply', replyId: reply.id, ticketId: existingTicket.id })
+    return
+  }
 
   const ticket = await prisma.ticket.create({
     data: {
@@ -21,7 +50,8 @@ webhooksRouter.post('/', async (req, res) => {
       fromEmail: data.from,
       fromName: data.fromName,
     },
+    select: { id: true, status: true },
   })
 
-  res.status(201).json({ id: ticket.id, status: ticket.status })
+  res.status(201).json({ type: 'ticket', id: ticket.id, status: ticket.status })
 })
