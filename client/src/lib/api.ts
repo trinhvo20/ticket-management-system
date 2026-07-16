@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { QueryClient } from '@tanstack/react-query'
-import { Role, TicketStatus, TicketCategory } from '@ticket/core'
+import { Role, TicketStatus, TicketCategory, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent } from '@ticket/core'
 
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
@@ -58,52 +58,7 @@ export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}`)
 }
 
-export interface Ticket {
-  id: number
-  subject: string
-  fromEmail: string
-  fromName: string
-  status: TicketStatus
-  category: TicketCategory | null
-  assignedToId: string | null
-  createdAt: string
-}
-
-export interface TicketQueryParams {
-  sortBy?: string
-  sortOrder?: 'asc' | 'desc'
-  status?: TicketStatus
-  category?: TicketCategory
-  search?: string
-  page?: number
-  pageSize?: number
-}
-
-export interface TicketPage {
-  tickets: Ticket[]
-  total: number
-}
-
-export interface TicketDetail extends Ticket {
-  body: string
-  bodyHtml?: string
-  updatedAt: string
-  assignedTo: { id: string; name: string } | null
-}
-
-export interface Agent {
-  id: string
-  name: string
-}
-
-export interface TicketReply {
-  id: number
-  ticketId: number
-  senderType: 'agent' | 'customer'
-  body: string
-  createdAt: string
-  author: { id: string; name: string } | null
-}
+export type { Ticket, TicketDetail, TicketQueryParams, TicketPage, TicketReply, Agent }
 
 export const agentKeys = {
   all: ['agents'] as const,
