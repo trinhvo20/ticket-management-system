@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { QueryClient } from '@tanstack/react-query'
-import { Role, TicketStatus, TicketCategory, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent } from '@ticket/core'
+import { Role, TicketStatus, TicketCategory, type User, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent } from '@ticket/core'
 
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
@@ -19,13 +19,8 @@ api.interceptors.response.use(
 
 export const queryClient = new QueryClient()
 
-export interface User {
-  id: string
-  name: string
-  email: string
-  role: Role
-  createdAt: string
-}
+// User API =============================================================================
+export type { User }
 
 export const userKeys = {
   all: ['users'] as const,
@@ -58,6 +53,7 @@ export async function deleteUser(id: string): Promise<void> {
   await api.delete(`/api/users/${id}`)
 }
 
+// Ticket API =============================================================================
 export type { Ticket, TicketDetail, TicketQueryParams, TicketPage, TicketReply, Agent }
 
 export const agentKeys = {
