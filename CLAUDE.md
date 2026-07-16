@@ -52,10 +52,10 @@ Bun monorepo with three workspaces: `/core` (shared schemas/types), `/client` (R
 
 The `@ticket/core` package holds **Zod schemas and inferred TypeScript types** that are used by both the server and the client. This avoids duplicating validation logic.
 
-- **Schemas** live in `src/schemas/<domain>.ts` (e.g. `src/schemas/user.ts`).
-- Each schema file exports the Zod schema **and** its inferred type (e.g. `createUserSchema` + `CreateUserInput`).
-- `src/index.ts` re-exports everything with `export * from './schemas/<domain>'`.
-- Import in server or client: `import { createUserSchema, type CreateUserInput } from '@ticket/core'`
+- **Schemas** live in `src/schemas/<domain>.ts` (e.g. `src/schemas/user.ts`). Each schema file exports the Zod schema **and** its inferred type (e.g. `createUserSchema` + `CreateUserInput`).
+- **Constants** live in `src/constants/<domain>.ts` (e.g. `src/constants/ticket.ts`). These are plain TypeScript interfaces for domain entities — no Zod involved. Use this layer for types that are shared across client and server but don't need runtime validation (e.g. `Ticket`, `TicketDetail`, `User`).
+- `src/index.ts` re-exports everything with `export * from './schemas/<domain>'` and `export * from './constants/<domain>'`.
+- Import in server or client: `import { createUserSchema, type CreateUserInput, type Ticket } from '@ticket/core'`
 - Do **not** add `.default()` to fields in shared schemas — Zod's `.default()` makes the input type optional, which breaks `zodResolver` in react-hook-form. Handle defaults via server logic or `useForm({ defaultValues })` instead.
 - Add the package to a new workspace by listing it in the root `package.json` `"workspaces"` array and adding `"@ticket/core": "workspace:*"` to the workspace's `dependencies`, then run `bun install`.
 - **Role enum** — use `Role` from `@ticket/core` instead of magic strings. `Role.Admin` = `'admin'`, `Role.Agent` = `'agent'`. Import: `import { Role } from '@ticket/core'`. Never compare or assign role values with raw string literals.
