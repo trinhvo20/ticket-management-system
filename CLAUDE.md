@@ -102,9 +102,21 @@ Planned layers as routes are added:
 - **TanStack Query v5 note**: `mutationFn` receives a second context argument `{ client, meta, mutationKey }` — use `expect.anything()` for that arg in `toHaveBeenCalledWith` assertions.
 - **Run**: `bun run test:unit` from root (single run), or `bun run test:run` / `bun run test` inside `/client` for single-run / watch mode. Avoid bare `bun test` at the root — Bun's native test runner picks up Playwright specs and fails.
 
-#### E2E tests (only when necessary)
+#### E2E tests (only when absolutely necessary)
 
-Write E2E tests only for things a unit test cannot cover: real browser navigation, auth redirects, role-gated nav visibility, and flows that cross the full stack (e.g. webhook → DB → UI). Do not use E2E to re-test rendering logic, loading states, error messages, or data formatting already covered by unit tests.
+Write E2E tests **only** for things a unit test structurally cannot cover. Default to unit tests; reach for E2E only when the answer is yes to: *"Does this require a real browser, real auth session, real DB round-trip, or cross-process coordination?"*
+
+**Write E2E for:**
+- Auth redirects — `ProtectedRoute` with a real session (not mocked)
+- Browser navigation — clicking a link and asserting the URL + rendered content
+- Full-stack mutations — verifying a write actually persists (e.g. change status → reload → still Resolved)
+- Full-stack reads — data that flows webhook → DB → UI (e.g. ticket appears after webhook)
+
+**Never write E2E for:**
+- Rendering logic, field values, loading skeletons, or error messages (unit tests own this)
+- Form validation (covered by unit tests with react-hook-form + zodResolver)
+- Dropdown option lists or interaction callbacks (covered by unit tests with mocked API)
+- Anything already asserted in a unit test — do not duplicate across layers
 
 Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Tests live in `e2e/`; run with `bun test:e2e` or `bun test:e2e:ui`.
 

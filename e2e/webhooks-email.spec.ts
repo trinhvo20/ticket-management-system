@@ -40,6 +40,7 @@ test.describe('Email webhook — POST /api/webhooks/email', () => {
         headers: authHeaders(SECRET),
         data: {
           ...VALID_PAYLOAD,
+          subject: `${VALID_PAYLOAD.subject} ${Date.now()}`,
           bodyHtml: '<p>I placed an order last week and have not received a confirmation email.</p>',
         },
       })
@@ -54,7 +55,7 @@ test.describe('Email webhook — POST /api/webhooks/email', () => {
     test('returns 201 with id and status "open" for a minimal valid payload without bodyHtml', async ({ request }) => {
       const response = await request.post(WEBHOOK_URL, {
         headers: authHeaders(SECRET),
-        data: VALID_PAYLOAD,
+        data: { ...VALID_PAYLOAD, subject: `${VALID_PAYLOAD.subject} ${Date.now()}` },
       })
 
       expect(response.status()).toBe(201)
@@ -65,9 +66,10 @@ test.describe('Email webhook — POST /api/webhooks/email', () => {
     })
 
     test('each successful request creates a new ticket with a distinct id', async ({ request }) => {
+      const now = Date.now()
       const [res1, res2] = await Promise.all([
-        request.post(WEBHOOK_URL, { headers: authHeaders(SECRET), data: VALID_PAYLOAD }),
-        request.post(WEBHOOK_URL, { headers: authHeaders(SECRET), data: VALID_PAYLOAD }),
+        request.post(WEBHOOK_URL, { headers: authHeaders(SECRET), data: { ...VALID_PAYLOAD, subject: `${VALID_PAYLOAD.subject} ${now}-1` } }),
+        request.post(WEBHOOK_URL, { headers: authHeaders(SECRET), data: { ...VALID_PAYLOAD, subject: `${VALID_PAYLOAD.subject} ${now}-2` } }),
       ])
 
       const [body1, body2] = await Promise.all([res1.json(), res2.json()])

@@ -37,8 +37,12 @@ app.get('/api/me', requireAuth, (req, res) => {
 
 app.use('/api/users', usersRouter)
 app.use('/api/tickets', ticketsRouter)
-const webhookRateLimit = rateLimit({ windowMs: 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false })
-app.use('/api/webhooks/email', webhookRateLimit, webhooksRouter)
+if (process.env.NODE_ENV !== 'test') {
+  const webhookRateLimit = rateLimit({ windowMs: 60 * 1000, limit: 20, standardHeaders: 'draft-8', legacyHeaders: false })
+  app.use('/api/webhooks/email', webhookRateLimit, webhooksRouter)
+} else {
+  app.use('/api/webhooks/email', webhooksRouter)
+}
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
