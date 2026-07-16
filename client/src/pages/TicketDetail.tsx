@@ -6,10 +6,8 @@ import {
   getTicket,
   getAgents,
   updateTicket,
-  getReplies,
   ticketKeys,
   agentKeys,
-  replyKeys,
   queryClient,
 } from '../lib/api'
 import { formatCategory, formatStatus } from '../lib/ticket-utils'
@@ -76,12 +74,6 @@ export function TicketDetail() {
   const { data: agents = [] } = useQuery({
     queryKey: agentKeys.all,
     queryFn: getAgents,
-    enabled: !isNaN(ticketId),
-  })
-
-  const { data: replies = [] } = useQuery({
-    queryKey: replyKeys.all(ticketId),
-    queryFn: () => getReplies(ticketId),
     enabled: !isNaN(ticketId),
   })
 
@@ -241,8 +233,8 @@ export function TicketDetail() {
       {/* Reply thread + form */}
       <div className="space-y-3">
         <h2 className="text-sm font-semibold">Replies</h2>
-        <ReplyList replies={replies} fromName={ticket.fromName} />
-        <ReplyForm ticketId={ticketId} />
+        <ReplyList ticket={ticket} />
+        <ReplyForm ticket={ticket} />
       </div>
     </div>
   )

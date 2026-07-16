@@ -1,12 +1,19 @@
-import type { TicketReply } from '../lib/api'
+import { useQuery } from '@tanstack/react-query'
+import type { TicketDetail } from '../lib/api'
+import { getReplies, replyKeys } from '../lib/api'
 import { Card, CardContent } from '@/components/ui/card'
 
 interface Props {
-  replies: TicketReply[]
-  fromName: string
+  ticket: TicketDetail
 }
 
-export function ReplyList({ replies, fromName }: Props) {
+export function ReplyList({ ticket }: Props) {
+  const { data: replies = [] } = useQuery({
+    queryKey: replyKeys.all(ticket.id),
+    queryFn: () => getReplies(ticket.id),
+  })
+
+  const { fromName } = ticket
   if (replies.length === 0) {
     return <p className="text-sm text-muted-foreground">No replies yet.</p>
   }

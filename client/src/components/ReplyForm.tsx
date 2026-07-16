@@ -2,16 +2,18 @@ import { useMutation } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createReplySchema, type CreateReplyInput } from '@ticket/core'
+import type { TicketDetail } from '../lib/api'
 import { createReply, replyKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldLabel, FieldError } from '@/components/ui/field'
 
 interface Props {
-  ticketId: number
+  ticket: TicketDetail
 }
 
-export function ReplyForm({ ticketId }: Props) {
+export function ReplyForm({ ticket }: Props) {
+  const { id: ticketId } = ticket
   const {
     register,
     handleSubmit,
