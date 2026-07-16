@@ -256,8 +256,8 @@ describe('TicketDetail', () => {
       vi.mocked(getTicket).mockResolvedValue(TICKET_ASSIGNED)
       renderDetail()
       await screen.findByText('Login is broken')
-      const combos = screen.getAllByRole('combobox')
-      expect(combos[2]).toHaveTextContent('Bob')
+      // agents load in TicketInfo after the ticket resolves, so wait for Bob to appear
+      await waitFor(() => expect(screen.getAllByRole('combobox')[2]).toHaveTextContent('Bob'))
     })
   })
 
