@@ -169,6 +169,7 @@ ADMIN_EMAIL           # Seeded admin user email
 ADMIN_PASSWORD        # Seeded admin user password
 CLIENT_URL            # Client origin for CORS (http://localhost:5173)
 ANTHROPIC_API_KEY     # Claude API key
+OPENAI_API_KEY         # OpenAI API key, used by Vercel AI SDK to polish agent replies (gpt-5-nano-2025-08-07)
 SENDGRID_API_KEY      # or MAILGUN_API_KEY
 EMAIL_WEBHOOK_SECRET  # HMAC secret for inbound webhook verification
 ```

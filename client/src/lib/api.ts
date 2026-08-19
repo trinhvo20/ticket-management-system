@@ -97,6 +97,11 @@ export async function createReply(ticketId: number, body: string): Promise<Ticke
   return data
 }
 
+export async function polishReply(ticketId: number, body: string): Promise<string> {
+  const { data } = await api.post<{ body: string }>(`/api/tickets/${ticketId}/replies/polish`, { body })
+  return data.body
+}
+
 export async function getTickets(params: TicketQueryParams = {}): Promise<TicketPage> {
   const { data } = await api.get<TicketPage>('/api/tickets', {
     params: {

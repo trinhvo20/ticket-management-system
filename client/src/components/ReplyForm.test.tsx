@@ -4,10 +4,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { TicketStatus, TicketCategory } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { ReplyForm } from './ReplyForm'
-import { createReply } from '../lib/api'
+import { createReply, polishReply } from '../lib/api'
 
 vi.mock('../lib/api', () => ({
   createReply: vi.fn(),
+  polishReply: vi.fn(),
   replyKeys: { all: (id: number) => ['tickets', id, 'replies'] },
   queryClient: { invalidateQueries: vi.fn() },
 }))
@@ -49,6 +50,11 @@ describe('ReplyForm', () => {
     it('renders the Send Reply button', () => {
       renderWithQuery(<ReplyForm ticket={TICKET} />)
       expect(screen.getByRole('button', { name: /send reply/i })).toBeInTheDocument()
+    })
+
+    it('renders the Polish button', () => {
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      expect(screen.getByRole('button', { name: /polish/i })).toBeInTheDocument()
     })
   })
 
@@ -105,6 +111,41 @@ describe('ReplyForm', () => {
       await userEvent.type(screen.getByPlaceholderText('Write your reply…'), 'Hello there!')
       await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
       expect(await screen.findByText('Server error')).toBeInTheDocument()
+    })
+  })
+
+  describe('polish', () => {
+    it('does not call polishReply when the body is empty', async () => {
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      await userEvent.click(screen.getByRole('button', { name: /polish/i }))
+      expect(polishReply).not.toHaveBeenCalled()
+    })
+
+    it('calls polishReply with the ticket id and typed body', async () => {
+      vi.mocked(polishReply).mockResolvedValue('Polished reply.')
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      await userEvent.type(screen.getByPlaceholderText('Write your reply…'), 'hey fix ur login')
+      await userEvent.click(screen.getByRole('button', { name: /polish/i }))
+      await waitFor(() =>
+        expect(polishReply).toHaveBeenCalledWith(1, 'hey fix ur login')
+      )
+    })
+
+    it('replaces the textarea content with the polished reply on success', async () => {
+      vi.mocked(polishReply).mockResolvedValue('Polished reply.')
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      const textarea = screen.getByPlaceholderText('Write your reply…')
+      await userEvent.type(textarea, 'hey fix ur login')
+      await userEvent.click(screen.getByRole('button', { name: /polish/i }))
+      await waitFor(() => expect(textarea).toHaveValue('Polished reply.'))
+    })
+
+    it('shows the error message when polishReply rejects', async () => {
+      vi.mocked(polishReply).mockRejectedValue(new Error('AI error'))
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      await userEvent.type(screen.getByPlaceholderText('Write your reply…'), 'hey fix ur login')
+      await userEvent.click(screen.getByRole('button', { name: /polish/i }))
+      expect(await screen.findByText('AI error')).toBeInTheDocument()
     })
   })
 })

@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { createReplySchema, type CreateReplyInput } from '@ticket/core'
 import type { TicketDetail } from '../lib/api'
-import { createReply, replyKeys, queryClient } from '../lib/api'
+import { createReply, polishReply, replyKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Field, FieldLabel, FieldError } from '@/components/ui/field'
@@ -19,6 +19,8 @@ export function ReplyForm({ ticket }: Props) {
     handleSubmit,
     reset,
     setError,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<CreateReplyInput>({
     resolver: zodResolver(createReplySchema),
@@ -29,6 +31,16 @@ export function ReplyForm({ ticket }: Props) {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: replyKeys.all(ticketId) })
       reset()
+    },
+    onError: (err: Error) => {
+      setError('root', { message: err.message })
+    },
+  })
+
+  const polishMutation = useMutation({
+    mutationFn: (body: string) => polishReply(ticketId, body),
+    onSuccess: (polished) => {
+      setValue('body', polished)
     },
     onError: (err: Error) => {
       setError('root', { message: err.message })
@@ -46,7 +58,7 @@ export function ReplyForm({ ticket }: Props) {
               rows={4}
               className="w-full min-w-0 rounded-lg border border-input bg-transparent px-2.5 py-1.5 text-sm transition-colors outline-none placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 resize-none"
               placeholder="Write your reply…"
-              disabled={mutation.isPending}
+              disabled={mutation.isPending || polishMutation.isPending}
               {...register('body')}
             />
             <FieldError errors={[errors.body]} />
@@ -54,7 +66,19 @@ export function ReplyForm({ ticket }: Props) {
           {errors.root && (
             <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={isSubmitting || mutation.isPending || polishMutation.isPending}
+              onClick={() => {
+                const body = getValues('body')
+                if (body?.trim()) polishMutation.mutate(body)
+              }}
+            >
+              {polishMutation.isPending ? 'Polishing…' : 'Polish'}
+            </Button>
             <Button type="submit" size="sm" disabled={isSubmitting || mutation.isPending}>
               {mutation.isPending ? 'Sending…' : 'Send Reply'}
             </Button>

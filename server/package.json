@@ -13,8 +13,10 @@
   },
   "dependencies": {
     "@ticket/core": "workspace:*",
+    "@ai-sdk/openai": "^4.0.43",
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
+    "ai": "^7.0.68",
     "better-auth": "^1.6.15",
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
