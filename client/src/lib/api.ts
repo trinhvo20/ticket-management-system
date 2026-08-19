@@ -105,6 +105,7 @@ export async function getTickets(params: TicketQueryParams = {}): Promise<Ticket
       status: params.status,
       category: params.category,
       search: params.search,
+      assignedToId: params.assignedToId,
       page: params.page,
       pageSize: params.pageSize,
     },

@@ -16,6 +16,7 @@ const ticketQuerySchema = z.object({
   status: z.nativeEnum(TicketStatus).optional(),
   category: z.nativeEnum(TicketCategory).optional(),
   search: z.string().optional(),
+  assignedToId: z.string().optional(),
   page: z.coerce.number().int().min(1).optional().default(1),
   pageSize: z.coerce.number().int().min(1).max(100).optional().default(10),
 })
@@ -29,6 +30,9 @@ ticketsRouter.get('/', requireAuth, async (req, res) => {
     ...(query.status !== undefined && { status: query.status }),
     ...(query.category !== undefined && { category: query.category }),
     ...(query.search && { subject: { contains: query.search, mode: 'insensitive' } }),
+    ...(query.assignedToId !== undefined && {
+      assignedToId: query.assignedToId === 'unassigned' ? null : query.assignedToId,
+    }),
   }
 
   const [tickets, total] = await prisma.$transaction([

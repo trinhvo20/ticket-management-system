@@ -11,7 +11,9 @@ import { getTickets } from '../lib/api'
 
 vi.mock('../lib/api', () => ({
   getTickets: vi.fn(),
+  getAgents: vi.fn().mockResolvedValue([]),
   ticketKeys: { all: ['tickets'], list: (_params?: unknown) => ['tickets'] },
+  agentKeys: { all: ['agents'] },
   queryClient: { invalidateQueries: vi.fn() },
 }))
 

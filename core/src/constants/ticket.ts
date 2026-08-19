@@ -24,6 +24,7 @@ export interface TicketQueryParams {
   status?: TicketStatus
   category?: TicketCategory
   search?: string
+  assignedToId?: string
   page?: number
   pageSize?: number
 }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import type { SortingState } from '@tanstack/react-table'
 import { TicketStatus, TicketCategory } from '@ticket/core'
-import { getTickets, ticketKeys } from '../lib/api'
+import { getTickets, getAgents, ticketKeys, agentKeys } from '../lib/api'
 import type { TicketQueryParams } from '../lib/api'
 import { TicketTable } from './TicketTable'
 import { TicketFilters } from './TicketFilters'
@@ -15,6 +15,7 @@ export function Tickets() {
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<TicketStatus | undefined>()
   const [categoryFilter, setCategoryFilter] = useState<TicketCategory | undefined>()
+  const [assignedToIdFilter, setAssignedToIdFilter] = useState<string | undefined>()
   const [page, setPage] = useState(1)
 
   function handleSortingChange(updater: SortingState | ((old: SortingState) => SortingState)) {
@@ -25,6 +26,7 @@ export function Tickets() {
   function handleSearchChange(v: string) { setSearch(v); setPage(1) }
   function handleStatusChange(v: TicketStatus | undefined) { setStatusFilter(v); setPage(1) }
   function handleCategoryChange(v: TicketCategory | undefined) { setCategoryFilter(v); setPage(1) }
+  function handleAssignedToIdChange(v: string | undefined) { setAssignedToIdFilter(v); setPage(1) }
 
   const queryParams: TicketQueryParams = {
     ...(sorting.length > 0 && {
@@ -34,6 +36,7 @@ export function Tickets() {
     ...(search && { search }),
     ...(statusFilter !== undefined && { status: statusFilter }),
     ...(categoryFilter !== undefined && { category: categoryFilter }),
+    ...(assignedToIdFilter !== undefined && { assignedToId: assignedToIdFilter }),
     page,
     pageSize: PAGE_SIZE,
   }
@@ -41,6 +44,11 @@ export function Tickets() {
   const { data, isLoading, error: fetchError } = useQuery({
     queryKey: ticketKeys.list(queryParams),
     queryFn: () => getTickets(queryParams),
+  })
+
+  const { data: agents = [] } = useQuery({
+    queryKey: agentKeys.all,
+    queryFn: getAgents,
   })
 
   const tickets = data?.tickets ?? []
@@ -58,6 +66,9 @@ export function Tickets() {
         onStatusChange={handleStatusChange}
         category={categoryFilter}
         onCategoryChange={handleCategoryChange}
+        agents={agents}
+        assignedToId={assignedToIdFilter}
+        onAssignedToIdChange={handleAssignedToIdChange}
       />
 
       {fetchError && (

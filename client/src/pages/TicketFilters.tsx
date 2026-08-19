@@ -1,4 +1,4 @@
-import { TicketStatus, TicketCategory } from '@ticket/core'
+import { TicketStatus, TicketCategory, type Agent } from '@ticket/core'
 import {
   Select,
   SelectContent,
@@ -9,6 +9,8 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
+
+const UNASSIGNED_VALUE = 'unassigned'
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
   [TicketStatus.Open]: 'Open',
@@ -29,6 +31,9 @@ interface TicketFiltersProps {
   onStatusChange: (value: TicketStatus | undefined) => void
   category: TicketCategory | undefined
   onCategoryChange: (value: TicketCategory | undefined) => void
+  agents: Agent[]
+  assignedToId: string | undefined
+  onAssignedToIdChange: (value: string | undefined) => void
 }
 
 export function TicketFilters({
@@ -38,8 +43,12 @@ export function TicketFilters({
   onStatusChange,
   category,
   onCategoryChange,
+  agents,
+  assignedToId,
+  onAssignedToIdChange,
 }: TicketFiltersProps) {
-  const hasFilters = search !== '' || status !== undefined || category !== undefined
+  const hasFilters =
+    search !== '' || status !== undefined || category !== undefined || assignedToId !== undefined
 
   return (
     <div className="flex items-center gap-3">
@@ -81,6 +90,21 @@ export function TicketFilters({
         </SelectContent>
       </Select>
 
+      <Select
+        value={assignedToId ?? ''}
+        onValueChange={(v) => onAssignedToIdChange(v === '' ? undefined : v)}
+      >
+        <SelectTrigger className="w-48">
+          <SelectValue placeholder="All assignees" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value={UNASSIGNED_VALUE}>Unassigned</SelectItem>
+          {agents.map((agent) => (
+            <SelectItem key={agent.id} value={agent.id}>{agent.name}</SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
       {hasFilters && (
         <Button
           variant="ghost"
@@ -89,6 +113,7 @@ export function TicketFilters({
             onSearchChange('')
             onStatusChange(undefined)
             onCategoryChange(undefined)
+            onAssignedToIdChange(undefined)
           }}
         >
           Clear filters
