@@ -36,6 +36,7 @@ webhooksRouter.post('/', async (req, res) => {
         senderType: 'customer',
         authorId: null,
         body: data.body,
+        bodyHtml: data.bodyHtml,
       },
     })
     res.status(201).json({ type: 'reply', replyId: reply.id, ticketId: existingTicket.id })

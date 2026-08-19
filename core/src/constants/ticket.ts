@@ -38,6 +38,7 @@ export interface TicketReply {
   ticketId: number
   senderType: 'agent' | 'customer'
   body: string
+  bodyHtml?: string
   createdAt: string
   author: { id: string; name: string } | null
 }

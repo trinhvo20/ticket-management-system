@@ -112,6 +112,7 @@ model TicketReply {
   authorId   String?
   author     User?     @relation(fields: [authorId], references: [id])
   body       String
+  bodyHtml   String?
   createdAt  DateTime  @default(now())
 
   @@index([ticketId])
