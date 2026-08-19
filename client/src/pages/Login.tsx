@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
+import { Eye, EyeOff } from 'lucide-react'
 import { authClient, useSession } from '../lib/auth-client'
 import { Button } from '@/components/ui/button'
 import {
@@ -24,6 +25,7 @@ type LoginFormValues = z.infer<typeof loginSchema>
 
 export function Login() {
   const [error, setError] = useState<string | null>(null)
+  const [showPassword, setShowPassword] = useState(false)
   const navigate = useNavigate()
   const { data: session } = useSession()
 
@@ -74,13 +76,28 @@ export function Login() {
               </Field>
               <Field data-invalid={!!errors.password}>
                 <FieldLabel htmlFor="password">Password</FieldLabel>
-                <Input
-                  id="password"
-                  type="password"
-                  autoComplete="current-password"
-                  aria-invalid={!!errors.password}
-                  {...register('password')}
-                />
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    autoComplete="current-password"
+                    aria-invalid={!!errors.password}
+                    className="pr-10"
+                    {...register('password')}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    aria-label={showPassword ? 'Hide password' : 'Show password'}
+                    className="absolute inset-y-0 right-0 flex items-center px-3 text-muted-foreground hover:text-foreground"
+                  >
+                    {showPassword ? (
+                      <EyeOff className="size-4" />
+                    ) : (
+                      <Eye className="size-4" />
+                    )}
+                  </button>
+                </div>
                 <FieldError errors={errors.password ? [errors.password] : undefined} />
               </Field>
               {error && <FieldError>{error}</FieldError>}
