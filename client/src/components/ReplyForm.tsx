@@ -52,6 +52,7 @@ export function ReplyForm({ ticket }: Props) {
   return (
     <Card>
       <CardContent className="py-4 px-4">
+        {/* Reply Form */}
         <form onSubmit={handleSubmit((data) => replyMutation.mutate(data))} className="space-y-3">
           <Field>
             <FieldLabel htmlFor="reply-body">Reply</FieldLabel>
@@ -68,9 +69,9 @@ export function ReplyForm({ ticket }: Props) {
             <p className="text-sm text-destructive">{errors.root.message}</p>
           )}
 
-          // Buttons
+          {/* Buttons */}
           <div className="flex justify-end gap-2">
-            // Polish button
+            {/* Polish button */}
             <Button
               type="button"
               variant="outline"
@@ -80,7 +81,7 @@ export function ReplyForm({ ticket }: Props) {
             >
               {polishMutation.isPending ? 'Polishing…' : 'Polish'}
             </Button>
-            // Send Reply button
+            {/* Send Reply button */}
             <Button
               type="submit"
               size="sm"

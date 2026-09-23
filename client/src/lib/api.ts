@@ -102,6 +102,11 @@ export async function polishReply(ticketId: number, body: string): Promise<strin
   return data.body
 }
 
+export async function summarizeTicket(ticketId: number): Promise<string> {
+  const { data } = await api.post<{ summary: string }>(`/api/tickets/${ticketId}/summarize`)
+  return data.summary
+}
+
 export async function getTickets(params: TicketQueryParams = {}): Promise<TicketPage> {
   const { data } = await api.get<TicketPage>('/api/tickets', {
     params: {

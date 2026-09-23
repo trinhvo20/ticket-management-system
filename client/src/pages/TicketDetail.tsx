@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getTicket, ticketKeys } from '../lib/api'
 import { BackLink } from '../components/BackLink'
 import { TicketInfo } from '../components/TicketInfo'
+import { TicketSummary } from '../components/TicketSummary'
 import { UpdateTicket } from '../components/UpdateTicket'
 import { ReplyList } from '../components/ReplyList'
 import { ReplyForm } from '../components/ReplyForm'
@@ -81,6 +82,7 @@ export function TicketDetail() {
         {/* Left column: TicketInfo, ReplyList, ReplyForm */}
         <div className="flex-1 min-w-0 space-y-3">
           <TicketInfo ticket={ticket} />
+          <TicketSummary ticket={ticket} />
           <h2 className="text-sm font-semibold">Replies</h2>
           <ReplyList ticket={ticket} />
           <ReplyForm ticket={ticket} />
