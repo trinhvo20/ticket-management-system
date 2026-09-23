@@ -59,16 +59,28 @@ describe('ReplyForm', () => {
   })
 
   describe('validation', () => {
-    it('shows a validation error when submitting an empty body', async () => {
+    it('disables the Send Reply and Polish buttons when the body is empty', () => {
       renderWithQuery(<ReplyForm ticket={TICKET} />)
-      await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
-      expect(await screen.findByText('Reply cannot be empty')).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /send reply/i })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /polish/i })).toBeDisabled()
+    })
+
+    it('disables the Send Reply and Polish buttons when the body is only whitespace', async () => {
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      await userEvent.type(screen.getByPlaceholderText('Write your reply…'), '   ')
+      expect(screen.getByRole('button', { name: /send reply/i })).toBeDisabled()
+      expect(screen.getByRole('button', { name: /polish/i })).toBeDisabled()
+    })
+
+    it('enables the Send Reply button once the user types something', async () => {
+      renderWithQuery(<ReplyForm ticket={TICKET} />)
+      await userEvent.type(screen.getByPlaceholderText('Write your reply…'), 'Hello there!')
+      expect(screen.getByRole('button', { name: /send reply/i })).toBeEnabled()
     })
 
     it('does not call createReply when the body is empty', async () => {
       renderWithQuery(<ReplyForm ticket={TICKET} />)
       await userEvent.click(screen.getByRole('button', { name: /send reply/i }))
-      await screen.findByText('Reply cannot be empty')
       expect(createReply).not.toHaveBeenCalled()
     })
   })
