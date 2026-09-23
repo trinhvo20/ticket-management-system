@@ -3,6 +3,7 @@ import { inboundEmailSchema } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { parseBody } from '../lib/parse-body'
 import { webhookAuth } from '../middleware/webhook'
+import { classifyTicket } from '../services/classify-ticket'
 
 export const webhooksRouter = Router()
 
@@ -53,6 +54,9 @@ webhooksRouter.post('/', async (req, res) => {
     },
     select: { id: true, status: true },
   })
+
+  // Fire-and-forget: classification runs in the background and must not delay the webhook response.
+  void classifyTicket(ticket.id)
 
   res.status(201).json({ type: 'ticket', id: ticket.id, status: ticket.status })
 })
