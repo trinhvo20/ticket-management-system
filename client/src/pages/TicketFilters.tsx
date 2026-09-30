@@ -13,10 +13,15 @@ import { Search } from 'lucide-react'
 const UNASSIGNED_VALUE = 'unassigned'
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
+  [TicketStatus.New]: 'New',
+  [TicketStatus.Processing]: 'Processing',
   [TicketStatus.Open]: 'Open',
   [TicketStatus.Resolved]: 'Resolved',
   [TicketStatus.Closed]: 'Closed',
 }
+
+// new/processing are internal, AI-managed states — not selectable as a manual filter
+const SELECTABLE_STATUSES = [TicketStatus.Open, TicketStatus.Resolved, TicketStatus.Closed]
 
 const CATEGORY_LABELS: Record<TicketCategory, string> = {
   [TicketCategory.GeneralQuestion]: 'General Question',
@@ -70,7 +75,7 @@ export function TicketFilters({
           <SelectValue placeholder="All statuses" />
         </SelectTrigger>
         <SelectContent>
-          {Object.values(TicketStatus).map((s) => (
+          {SELECTABLE_STATUSES.map((s) => (
             <SelectItem key={s} value={s}>{STATUS_LABELS[s]}</SelectItem>
           ))}
         </SelectContent>

@@ -2,6 +2,8 @@ import { TicketStatus, TicketCategory } from '@ticket/core'
 
 export function StatusBadge({ status }: { status: TicketStatus }) {
   const styles: Record<TicketStatus, string> = {
+    [TicketStatus.New]: 'bg-amber-100 text-amber-700',
+    [TicketStatus.Processing]: 'bg-purple-100 text-purple-700',
     [TicketStatus.Open]: 'bg-blue-100 text-blue-700',
     [TicketStatus.Resolved]: 'bg-green-100 text-green-700',
     [TicketStatus.Closed]: 'bg-gray-100 text-gray-600',
@@ -26,6 +28,8 @@ export function formatCategory(category: TicketCategory | null) {
 }
 
 const STATUS_LABELS: Record<TicketStatus, string> = {
+  [TicketStatus.New]: 'New',
+  [TicketStatus.Processing]: 'Processing',
   [TicketStatus.Open]: 'Open',
   [TicketStatus.Resolved]: 'Resolved',
   [TicketStatus.Closed]: 'Closed',
