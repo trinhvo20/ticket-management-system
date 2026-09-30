@@ -7,6 +7,8 @@ import { requireAuth } from './middleware/auth'
 import { usersRouter } from './routes/users'
 import { ticketsRouter } from './routes/tickets'
 import { webhooksRouter } from './routes/webhooks'
+import { startBoss, stopBoss } from './lib/boss'
+import { registerClassifyTicketWorker } from './services/classify-ticket'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -44,6 +46,18 @@ if (process.env.NODE_ENV !== 'test') {
   app.use('/api/webhooks/email', webhooksRouter)
 }
 
-app.listen(PORT, () => {
+await startBoss()
+await registerClassifyTicketWorker()
+
+const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)
 })
+
+async function shutdown() {
+  server.close()
+  await stopBoss()
+  process.exit(0)
+}
+
+process.on('SIGTERM', shutdown)
+process.on('SIGINT', shutdown)

@@ -5,7 +5,7 @@ import express from 'express'
 const findFirstMock = mock()
 const createTicketMock = mock()
 const createReplyMock = mock()
-const classifyTicketMock = mock()
+const enqueueClassifyTicketMock = mock()
 
 mock.module('../lib/prisma', () => ({
   prisma: {
@@ -13,7 +13,7 @@ mock.module('../lib/prisma', () => ({
     ticketReply: { create: createReplyMock },
   },
 }))
-mock.module('../services/classify-ticket', () => ({ classifyTicket: classifyTicketMock }))
+mock.module('../services/classify-ticket', () => ({ enqueueClassifyTicket: enqueueClassifyTicketMock }))
 
 const { webhooksRouter } = await import('./webhooks')
 
@@ -33,7 +33,7 @@ beforeEach(async () => {
   findFirstMock.mockReset()
   createTicketMock.mockReset()
   createReplyMock.mockReset()
-  classifyTicketMock.mockReset()
+  enqueueClassifyTicketMock.mockReset()
 
   const app = express()
   app.use(express.json())
@@ -60,31 +60,25 @@ function postWebhook(body: unknown) {
 }
 
 describe('POST /api/webhooks/email', () => {
-  it('kicks off classification for a newly created ticket without waiting on it', async () => {
+  it('enqueues a classification job for a newly created ticket', async () => {
     findFirstMock.mockResolvedValueOnce(null)
     createTicketMock.mockResolvedValueOnce({ id: 42, status: 'open' })
-    let resolveClassify: () => void = () => {}
-    classifyTicketMock.mockReturnValueOnce(
-      new Promise<void>((resolve) => {
-        resolveClassify = resolve
-      }),
-    )
+    enqueueClassifyTicketMock.mockResolvedValueOnce(undefined)
 
     const res = await postWebhook(PAYLOAD)
 
     expect(res.status).toBe(201)
     expect(await res.json()).toEqual({ type: 'ticket', id: 42, status: 'open' })
-    expect(classifyTicketMock).toHaveBeenCalledWith(42)
-    resolveClassify()
+    expect(enqueueClassifyTicketMock).toHaveBeenCalledWith(42)
   })
 
-  it('does not classify when the email threads onto an existing open ticket', async () => {
+  it('does not enqueue classification when the email threads onto an existing open ticket', async () => {
     findFirstMock.mockResolvedValueOnce({ id: 7 })
     createReplyMock.mockResolvedValueOnce({ id: 99 })
 
     const res = await postWebhook(PAYLOAD)
 
     expect(res.status).toBe(201)
-    expect(classifyTicketMock).not.toHaveBeenCalled()
+    expect(enqueueClassifyTicketMock).not.toHaveBeenCalled()
   })
 })
