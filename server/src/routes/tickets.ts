@@ -3,7 +3,7 @@ import { z } from 'zod'
 import { generateText } from 'ai'
 import { openai } from '@ai-sdk/openai'
 import { Prisma, TicketStatus, TicketCategory } from '@prisma/client'
-import { createReplySchema } from '@ticket/core'
+import { createReplySchema, type DashboardStats } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
 import { parseBody } from '../lib/parse-body'
@@ -65,52 +65,16 @@ ticketsRouter.get('/', requireAuth, async (req, res) => {
 
 const DAILY_COUNT_DAYS = 30
 
-function toDateKey(date: Date): string {
-  return date.toISOString().slice(0, 10)
-}
-
-// Get dashboard stats — registered before /:id so "stats" isn't captured as a ticket id
+// Get dashboard stats — registered before /:id so "stats" isn't captured as a ticket id.
+// All aggregation happens in the get_dashboard_stats() Postgres function (see prisma/migrations).
 ticketsRouter.get('/stats', requireAuth, async (_req, res) => {
   const aiAgentId = await getAiAgentId()
 
-  const dailyCountsSince = new Date()
-  dailyCountsSince.setUTCHours(0, 0, 0, 0)
-  dailyCountsSince.setUTCDate(dailyCountsSince.getUTCDate() - (DAILY_COUNT_DAYS - 1))
+  const rows = await prisma.$queryRaw<
+    { stats: DashboardStats }[]
+  >`SELECT get_dashboard_stats(${aiAgentId}, ${DAILY_COUNT_DAYS}) AS stats`
 
-  const [total, open, resolvedByAi, resolvedTickets, recentTickets] = await prisma.$transaction([
-    prisma.ticket.count(),
-    prisma.ticket.count({ where: { status: TicketStatus.open } }),
-    prisma.ticket.count({ where: { status: TicketStatus.resolved, assignedToId: aiAgentId } }),
-    prisma.ticket.findMany({
-      where: { resolvedAt: { not: null } },
-      select: { createdAt: true, resolvedAt: true },
-    }),
-    prisma.ticket.findMany({
-      where: { createdAt: { gte: dailyCountsSince } },
-      select: { createdAt: true },
-    }),
-  ])
-
-  const avgResolutionTimeMs = resolvedTickets.length
-    ? resolvedTickets.reduce((sum, t) => sum + (t.resolvedAt!.getTime() - t.createdAt.getTime()), 0) /
-      resolvedTickets.length
-    : null
-
-  const pctResolvedByAi = total > 0 ? (resolvedByAi / total) * 100 : 0
-
-  const countsByDay = new Map<string, number>()
-  for (let i = 0; i < DAILY_COUNT_DAYS; i++) {
-    const day = new Date(dailyCountsSince)
-    day.setUTCDate(day.getUTCDate() + i)
-    countsByDay.set(toDateKey(day), 0)
-  }
-  for (const ticket of recentTickets) {
-    const key = toDateKey(ticket.createdAt)
-    countsByDay.set(key, (countsByDay.get(key) ?? 0) + 1)
-  }
-  const dailyCounts = Array.from(countsByDay, ([date, count]) => ({ date, count }))
-
-  res.json({ total, open, resolvedByAi, pctResolvedByAi, avgResolutionTimeMs, dailyCounts })
+  res.json(rows[0]!.stats)
 })
 
 // Get a specific ticket
