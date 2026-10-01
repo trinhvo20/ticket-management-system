@@ -73,9 +73,10 @@ Planned layers as routes are added:
 
 ### Email Webhook
 
-- **Endpoint**: `POST /api/webhooks/email` — provider-agnostic; accepts a normalized JSON payload and creates a `Ticket`.
-- **Auth**: `webhookAuth` middleware (`src/middleware/webhook.ts`) — checks `Authorization: Bearer <token>` against `EMAIL_WEBHOOK_SECRET` using `crypto.timingSafeEqual`. Applied via `webhooksRouter.use(webhookAuth)` so the router owns its own auth.
-- **Payload** (validated by `inboundEmailSchema` from `@ticket/core`): `{ from, fromName, subject, body, bodyHtml? }`.
+- **Endpoint**: `POST /api/webhooks/email` — provider-agnostic; accepts an already-normalized JSON payload and creates a `Ticket`. Shared creation/threading logic lives in `handleInboundEmail` (`src/routes/webhooks.ts`), called by every provider route after it maps to the normalized shape.
+- **`POST /api/webhooks/email/cloudmailin`** — for CloudMailin (used in dev since it needs no owned domain: free inbound address like `random@cloudmailin.net`). Maps CloudMailin's ["Normalized JSON" format](https://docs.cloudmailin.com/http_post_formats/json_normalized/) (`envelope`, `headers.from`/`headers.subject`, `plain`, `html`) to `inboundEmailSchema` via `mapCloudMailinPayload` (`src/lib/inbound-email-providers.ts`). Set CloudMailin's target URL Authorization header to `Bearer <EMAIL_WEBHOOK_SECRET>` — this satisfies `webhookAuth` directly.
+- **Auth**: `webhookAuth` middleware (`src/middleware/webhook.ts`) — checks `Authorization: Bearer <token>` against `EMAIL_WEBHOOK_SECRET` using `crypto.timingSafeEqual`. Applied via `webhooksRouter.use(webhookAuth)` so the router owns its own auth for every sub-route.
+- **Payload** (validated by `inboundEmailSchema` from `@ticket/core`): `{ from, fromName, subject, body, bodyHtml? }`. `body` max 1,000 chars / `bodyHtml` max 2,000 — provider mappers truncate to fit.
 - **Response**: `201 { id, status }` — returns only id and status, not the full row.
 - **Rate limit**: 20 req/min (applied in `src/index.ts`, always on, separate from the global production-only limiter).
 - **Ticket model**: `id` (autoincrement Int), `subject`, `body`, `bodyHtml?`, `fromEmail`, `fromName`, `status` (default `open`), `category?`, `assignedToId?` → `User`.

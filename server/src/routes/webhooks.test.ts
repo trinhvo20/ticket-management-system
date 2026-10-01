@@ -98,3 +98,49 @@ describe('POST /api/webhooks/email', () => {
     expect(enqueueAutoResolveTicketMock).not.toHaveBeenCalled()
   })
 })
+
+function postCloudMailinWebhook(body: unknown) {
+  return fetch(`${baseUrl}/api/webhooks/email/cloudmailin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${SECRET}` },
+    body: JSON.stringify(body),
+  })
+}
+
+const CLOUDMAILIN_PAYLOAD = {
+  envelope: { from: 'customer@example.com' },
+  headers: { from: 'Alice Customer <customer@example.com>', subject: 'Cannot log in' },
+  plain: "I can't log in to my account.",
+  html: '<p>I can&#39;t log in to my account.</p>',
+}
+
+describe('POST /api/webhooks/email/cloudmailin', () => {
+  it('maps CloudMailin normalized JSON into a new ticket', async () => {
+    findFirstMock.mockResolvedValueOnce(null)
+    createTicketMock.mockResolvedValueOnce({ id: 43, status: 'new' })
+    enqueueClassifyTicketMock.mockResolvedValueOnce(undefined)
+    enqueueAutoResolveTicketMock.mockResolvedValueOnce(undefined)
+
+    const res = await postCloudMailinWebhook(CLOUDMAILIN_PAYLOAD)
+
+    expect(res.status).toBe(201)
+    expect(await res.json()).toEqual({ type: 'ticket', id: 43, status: 'new' })
+    expect(createTicketMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({
+          fromEmail: 'customer@example.com',
+          fromName: 'Alice Customer',
+          subject: 'Cannot log in',
+          body: "I can't log in to my account.",
+        }),
+      }),
+    )
+  })
+
+  it('rejects a payload with no extractable body', async () => {
+    const res = await postCloudMailinWebhook({ envelope: { from: 'customer@example.com' }, headers: {} })
+
+    expect(res.status).toBe(400)
+    expect(createTicketMock).not.toHaveBeenCalled()
+  })
+})
