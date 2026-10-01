@@ -63,17 +63,31 @@ ticketsRouter.get('/', requireAuth, async (req, res) => {
   res.json({ tickets, total })
 })
 
+const DAILY_COUNT_DAYS = 30
+
+function toDateKey(date: Date): string {
+  return date.toISOString().slice(0, 10)
+}
+
 // Get dashboard stats — registered before /:id so "stats" isn't captured as a ticket id
 ticketsRouter.get('/stats', requireAuth, async (_req, res) => {
   const aiAgentId = await getAiAgentId()
 
-  const [total, open, resolvedByAi, resolvedTickets] = await prisma.$transaction([
+  const dailyCountsSince = new Date()
+  dailyCountsSince.setUTCHours(0, 0, 0, 0)
+  dailyCountsSince.setUTCDate(dailyCountsSince.getUTCDate() - (DAILY_COUNT_DAYS - 1))
+
+  const [total, open, resolvedByAi, resolvedTickets, recentTickets] = await prisma.$transaction([
     prisma.ticket.count(),
     prisma.ticket.count({ where: { status: TicketStatus.open } }),
     prisma.ticket.count({ where: { status: TicketStatus.resolved, assignedToId: aiAgentId } }),
     prisma.ticket.findMany({
       where: { resolvedAt: { not: null } },
       select: { createdAt: true, resolvedAt: true },
+    }),
+    prisma.ticket.findMany({
+      where: { createdAt: { gte: dailyCountsSince } },
+      select: { createdAt: true },
     }),
   ])
 
@@ -84,7 +98,19 @@ ticketsRouter.get('/stats', requireAuth, async (_req, res) => {
 
   const pctResolvedByAi = total > 0 ? (resolvedByAi / total) * 100 : 0
 
-  res.json({ total, open, resolvedByAi, pctResolvedByAi, avgResolutionTimeMs })
+  const countsByDay = new Map<string, number>()
+  for (let i = 0; i < DAILY_COUNT_DAYS; i++) {
+    const day = new Date(dailyCountsSince)
+    day.setUTCDate(day.getUTCDate() + i)
+    countsByDay.set(toDateKey(day), 0)
+  }
+  for (const ticket of recentTickets) {
+    const key = toDateKey(ticket.createdAt)
+    countsByDay.set(key, (countsByDay.get(key) ?? 0) + 1)
+  }
+  const dailyCounts = Array.from(countsByDay, ([date, count]) => ({ date, count }))
+
+  res.json({ total, open, resolvedByAi, pctResolvedByAi, avgResolutionTimeMs, dailyCounts })
 })
 
 // Get a specific ticket

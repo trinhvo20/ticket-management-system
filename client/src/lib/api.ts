@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { QueryClient } from '@tanstack/react-query'
-import { Role, TicketStatus, TicketCategory, type User, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent, type DashboardStats } from '@ticket/core'
+import { Role, TicketStatus, TicketCategory, type User, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent, type DashboardStats, type DailyTicketCount } from '@ticket/core'
 
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
@@ -124,7 +124,7 @@ export async function getTickets(params: TicketQueryParams = {}): Promise<Ticket
 }
 
 // Dashboard API =============================================================================
-export type { DashboardStats }
+export type { DashboardStats, DailyTicketCount }
 
 export const dashboardKeys = {
   all: ['dashboard'] as const,

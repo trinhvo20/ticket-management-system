@@ -62,12 +62,14 @@ describe('GET /api/tickets/stats', () => {
     findManyMock.mockResolvedValueOnce([
       { createdAt: new Date('2026-01-01T00:00:00Z'), resolvedAt: new Date('2026-01-01T01:00:00Z') },
       { createdAt: new Date('2026-01-01T00:00:00Z'), resolvedAt: new Date('2026-01-01T03:00:00Z') },
-    ])
+    ]) // resolvedTickets
+    findManyMock.mockResolvedValueOnce([]) // recentTickets (daily counts)
 
     const res = await getStats()
 
     expect(res.status).toBe(200)
-    expect(await res.json()).toEqual({
+    const body = await res.json()
+    expect(body).toMatchObject({
       total: 10,
       open: 3,
       resolvedByAi: 4,
@@ -83,15 +85,34 @@ describe('GET /api/tickets/stats', () => {
     countMock.mockResolvedValueOnce(0)
     countMock.mockResolvedValueOnce(0)
     findManyMock.mockResolvedValueOnce([])
+    findManyMock.mockResolvedValueOnce([])
 
     const res = await getStats()
 
-    expect(await res.json()).toEqual({
+    expect(await res.json()).toMatchObject({
       total: 0,
       open: 0,
       resolvedByAi: 0,
       pctResolvedByAi: 0,
       avgResolutionTimeMs: null,
     })
+  })
+
+  it('returns a 30-day zero-filled daily ticket count ending today, with real counts folded in', async () => {
+    countMock.mockResolvedValueOnce(2)
+    countMock.mockResolvedValueOnce(2)
+    countMock.mockResolvedValueOnce(0)
+    findManyMock.mockResolvedValueOnce([])
+
+    const today = new Date()
+    const todayKey = today.toISOString().slice(0, 10)
+    findManyMock.mockResolvedValueOnce([{ createdAt: today }, { createdAt: today }])
+
+    const res = await getStats()
+
+    const { dailyCounts } = (await res.json()) as { dailyCounts: { date: string; count: number }[] }
+    expect(dailyCounts).toHaveLength(30)
+    expect(dailyCounts[29]).toEqual({ date: todayKey, count: 2 })
+    expect(dailyCounts.slice(0, 29).every((d) => d.count === 0)).toBe(true)
   })
 })
