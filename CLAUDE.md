@@ -8,15 +8,16 @@ Always use the **Context7 MCP** (`mcp__context7__resolve-library-id` → `mcp__c
 
 ## Project Overview
 
-AI-powered support ticket management system. Inbound emails become tickets; Claude API auto-classifies them, generates summaries, and suggests replies using a knowledge base. See `project-scope.md` for full requirements and `implementation-plan.md` for phased task breakdown.
+AI-powered support ticket management system. Inbound emails become tickets; OpenAI (via the Vercel AI SDK) auto-classifies them, generates summaries, and suggests replies using a knowledge base. See `project-scope.md` for full requirements and `implementation-plan.md` for phased task breakdown.
 
 ## Tech Stack
 
-- **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router, **Axios** (HTTP), **TanStack Query v5** (server state) — `/client` (Vite, port 5173)
-- **Backend**: Express 5 + TypeScript, runs on Bun — `/server` (port 3001)
+- **Frontend**: React 19 + TypeScript, Tailwind CSS, shadcn/ui (Nova preset), React Router, **Axios** (HTTP), **TanStack Query v5** (server state), **Recharts** (charts, via shadcn's `chart` component) — `/client` (Vite, port 5173)
+- **Backend**: Express 5 + TypeScript, runs on Bun, **Better Auth** (email/password, DB sessions) — `/server` (port 3001)
 - **Shared**: `/core` — internal package (`@ticket/core`) for Zod schemas and types shared between client and server
 - **Database**: PostgreSQL via Prisma ORM
-- **AI**: Anthropic Claude API
+- **Jobs**: **pg-boss** (Postgres-backed queue) for background AI classification/auto-resolution — `src/lib/boss.ts`
+- **AI**: OpenAI via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai`), model `gpt-5-nano-2025-08-07`
 - **Email**: SendGrid or Mailgun
 - **Package manager / runtime**: Bun workspaces
 
@@ -168,8 +169,7 @@ SERVER_URL            # Server base URL, used by Better Auth and CORS (http://lo
 ADMIN_EMAIL           # Seeded admin user email
 ADMIN_PASSWORD        # Seeded admin user password
 CLIENT_URL            # Client origin for CORS (http://localhost:5173)
-ANTHROPIC_API_KEY     # Claude API key
-OPENAI_API_KEY         # OpenAI API key, used by Vercel AI SDK to polish agent replies (gpt-5-nano-2025-08-07)
+OPENAI_API_KEY        # OpenAI API key, used by the Vercel AI SDK for classification, auto-resolution, summaries, and reply polishing (gpt-5-nano-2025-08-07)
 SENDGRID_API_KEY      # or MAILGUN_API_KEY
 EMAIL_WEBHOOK_SECRET  # HMAC secret for inbound webhook verification
 ```
