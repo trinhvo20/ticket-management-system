@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { QueryClient } from '@tanstack/react-query'
-import { Role, TicketStatus, TicketCategory, type User, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent } from '@ticket/core'
+import { Role, TicketStatus, TicketCategory, type User, type Ticket, type TicketDetail, type TicketQueryParams, type TicketPage, type TicketReply, type Agent, type DashboardStats } from '@ticket/core'
 
 const BASE = import.meta.env.VITE_SERVER_URL ?? 'http://localhost:3001'
 
@@ -120,5 +120,18 @@ export async function getTickets(params: TicketQueryParams = {}): Promise<Ticket
       pageSize: params.pageSize,
     },
   })
+  return data
+}
+
+// Dashboard API =============================================================================
+export type { DashboardStats }
+
+export const dashboardKeys = {
+  all: ['dashboard'] as const,
+  stats: () => ['dashboard', 'stats'] as const,
+}
+
+export async function getStats(): Promise<DashboardStats> {
+  const { data } = await api.get<DashboardStats>('/api/tickets/stats')
   return data
 }

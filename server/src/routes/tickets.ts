@@ -7,6 +7,7 @@ import { createReplySchema } from '@ticket/core'
 import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
 import { parseBody } from '../lib/parse-body'
+import { getAiAgentId } from '../lib/ai-agent'
 
 export const ticketsRouter = Router()
 
@@ -60,6 +61,30 @@ ticketsRouter.get('/', requireAuth, async (req, res) => {
   ])
 
   res.json({ tickets, total })
+})
+
+// Get dashboard stats — registered before /:id so "stats" isn't captured as a ticket id
+ticketsRouter.get('/stats', requireAuth, async (_req, res) => {
+  const aiAgentId = await getAiAgentId()
+
+  const [total, open, resolvedByAi, resolvedTickets] = await prisma.$transaction([
+    prisma.ticket.count(),
+    prisma.ticket.count({ where: { status: TicketStatus.open } }),
+    prisma.ticket.count({ where: { status: TicketStatus.resolved, assignedToId: aiAgentId } }),
+    prisma.ticket.findMany({
+      where: { resolvedAt: { not: null } },
+      select: { createdAt: true, resolvedAt: true },
+    }),
+  ])
+
+  const avgResolutionTimeMs = resolvedTickets.length
+    ? resolvedTickets.reduce((sum, t) => sum + (t.resolvedAt!.getTime() - t.createdAt.getTime()), 0) /
+      resolvedTickets.length
+    : null
+
+  const pctResolvedByAi = total > 0 ? (resolvedByAi / total) * 100 : 0
+
+  res.json({ total, open, resolvedByAi, pctResolvedByAi, avgResolutionTimeMs })
 })
 
 // Get a specific ticket
@@ -129,6 +154,7 @@ ticketsRouter.patch('/:id', requireAuth, async (req, res) => {
       data: {
         ...(data.assignedToId !== undefined && { assignedToId: data.assignedToId }),
         ...(data.status !== undefined && { status: data.status }),
+        ...(data.status === TicketStatus.resolved && { resolvedAt: new Date() }),
         ...(data.category !== undefined && { category: data.category }),
       },
       select: {

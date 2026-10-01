@@ -7,6 +7,7 @@ const createTicketMock = mock()
 const createReplyMock = mock()
 const enqueueClassifyTicketMock = mock()
 const enqueueAutoResolveTicketMock = mock()
+const getAiAgentIdMock = mock()
 
 mock.module('../lib/prisma', () => ({
   prisma: {
@@ -16,6 +17,7 @@ mock.module('../lib/prisma', () => ({
 }))
 mock.module('../services/classify-ticket', () => ({ enqueueClassifyTicket: enqueueClassifyTicketMock }))
 mock.module('../services/resolve-ticket', () => ({ enqueueAutoResolveTicket: enqueueAutoResolveTicketMock }))
+mock.module('../lib/ai-agent', () => ({ getAiAgentId: getAiAgentIdMock }))
 
 const { webhooksRouter } = await import('./webhooks')
 
@@ -37,6 +39,8 @@ beforeEach(async () => {
   createReplyMock.mockReset()
   enqueueClassifyTicketMock.mockReset()
   enqueueAutoResolveTicketMock.mockReset()
+  getAiAgentIdMock.mockReset()
+  getAiAgentIdMock.mockResolvedValue('ai-user-1')
 
   const app = express()
   app.use(express.json())
@@ -73,6 +77,9 @@ describe('POST /api/webhooks/email', () => {
 
     expect(res.status).toBe(201)
     expect(await res.json()).toEqual({ type: 'ticket', id: 42, status: 'new' })
+    expect(createTicketMock).toHaveBeenCalledWith(
+      expect.objectContaining({ data: expect.objectContaining({ assignedToId: 'ai-user-1' }) }),
+    )
     expect(enqueueClassifyTicketMock).toHaveBeenCalledWith(42)
     expect(enqueueAutoResolveTicketMock).toHaveBeenCalledWith(42)
   })

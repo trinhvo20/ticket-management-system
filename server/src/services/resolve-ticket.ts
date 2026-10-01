@@ -70,9 +70,10 @@ export async function autoResolveTicket(ticketId: number): Promise<void> {
       prompt: `<ticket_subject>\n${ticket.subject}\n</ticket_subject>\n<ticket_body>\n${ticket.body}\n</ticket_body>`,
     }))
   } catch (err) {
+    // Unassign from the AI agent so the ticket falls back to the normal human queue.
     await prisma.ticket.updateMany({
       where: { id: ticketId, status: 'processing' },
-      data: { status: 'open' },
+      data: { status: 'open', assignedToId: null },
     })
     throw err
   }
@@ -87,15 +88,17 @@ export async function autoResolveTicket(ticketId: number): Promise<void> {
           body: object.replyBody,
         },
       }),
+      // Stays assigned to the AI agent — this is what marks it as AI-resolved for the dashboard.
       prisma.ticket.updateMany({
         where: { id: ticketId, status: 'processing' },
-        data: { status: 'resolved' },
+        data: { status: 'resolved', resolvedAt: new Date() },
       }),
     ])
   } else {
+    // Unassign from the AI agent so the ticket falls back to the normal human queue.
     await prisma.ticket.updateMany({
       where: { id: ticketId, status: 'processing' },
-      data: { status: 'open' },
+      data: { status: 'open', assignedToId: null },
     })
   }
 }

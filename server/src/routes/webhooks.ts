@@ -5,6 +5,7 @@ import { parseBody } from '../lib/parse-body'
 import { webhookAuth } from '../middleware/webhook'
 import { enqueueClassifyTicket } from '../services/classify-ticket'
 import { enqueueAutoResolveTicket } from '../services/resolve-ticket'
+import { getAiAgentId } from '../lib/ai-agent'
 
 export const webhooksRouter = Router()
 
@@ -45,6 +46,9 @@ webhooksRouter.post('/', async (req, res) => {
     return
   }
 
+  // Assign to the AI agent so it can attempt auto-resolution; auto-resolve unassigns it if it can't.
+  const aiAgentId = await getAiAgentId()
+
   const ticket = await prisma.ticket.create({
     data: {
       subject: data.subject,
@@ -52,6 +56,7 @@ webhooksRouter.post('/', async (req, res) => {
       bodyHtml: data.bodyHtml,
       fromEmail: data.from,
       fromName: data.fromName,
+      assignedToId: aiAgentId,
     },
     select: { id: true, status: true },
   })

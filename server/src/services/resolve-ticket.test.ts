@@ -107,11 +107,11 @@ describe('autoResolveTicket', () => {
     })
     expect(updateManyMock).toHaveBeenCalledWith({
       where: { id: 1, status: 'processing' },
-      data: { status: 'resolved' },
+      data: { status: 'resolved', resolvedAt: expect.any(Date) },
     })
   })
 
-  it('falls back to open when the AI declines to resolve the ticket', async () => {
+  it('falls back to open and unassigns from AI when the AI declines to resolve the ticket', async () => {
     findUniqueMock.mockResolvedValueOnce(TICKET)
     generateObjectMock.mockResolvedValueOnce({ object: { canResolve: false, replyBody: '' } })
 
@@ -120,11 +120,11 @@ describe('autoResolveTicket', () => {
     expect(ticketReplyCreateMock).not.toHaveBeenCalled()
     expect(updateManyMock).toHaveBeenCalledWith({
       where: { id: 1, status: 'processing' },
-      data: { status: 'open' },
+      data: { status: 'open', assignedToId: null },
     })
   })
 
-  it('falls back to open when canResolve is true but replyBody is blank', async () => {
+  it('falls back to open and unassigns from AI when canResolve is true but replyBody is blank', async () => {
     findUniqueMock.mockResolvedValueOnce(TICKET)
     generateObjectMock.mockResolvedValueOnce({ object: { canResolve: true, replyBody: '   ' } })
 
@@ -133,11 +133,11 @@ describe('autoResolveTicket', () => {
     expect(ticketReplyCreateMock).not.toHaveBeenCalled()
     expect(updateManyMock).toHaveBeenCalledWith({
       where: { id: 1, status: 'processing' },
-      data: { status: 'open' },
+      data: { status: 'open', assignedToId: null },
     })
   })
 
-  it('falls back to open and still propagates the error when the AI call fails', async () => {
+  it('falls back to open, unassigns from AI, and still propagates the error when the AI call fails', async () => {
     findUniqueMock.mockResolvedValueOnce(TICKET)
     generateObjectMock.mockRejectedValueOnce(new Error('provider unavailable'))
 
@@ -146,7 +146,7 @@ describe('autoResolveTicket', () => {
     expect(ticketReplyCreateMock).not.toHaveBeenCalled()
     expect(updateManyMock).toHaveBeenCalledWith({
       where: { id: 1, status: 'processing' },
-      data: { status: 'open' },
+      data: { status: 'open', assignedToId: null },
     })
   })
 })

@@ -5,13 +5,15 @@ import { prisma } from '../lib/prisma'
 import { auth } from '../lib/auth'
 import { parseBody } from '../lib/parse-body'
 import { requireAuth, requireAdmin } from '../middleware/auth'
+import { AI_AGENT_EMAIL } from '../lib/ai-agent'
 
 export const usersRouter = Router()
 
-// Get all agents (for ticket assignment dropdown)
+// Get all agents (for ticket assignment dropdown) — excludes the AI agent, since manually
+// assigning a ticket to it here wouldn't trigger auto-resolution.
 usersRouter.get('/agents', requireAuth, async (_req, res) => {
   const agents = await prisma.user.findMany({
-    where: { role: Role.agent, deletedAt: null },
+    where: { role: Role.agent, deletedAt: null, email: { not: AI_AGENT_EMAIL } },
     select: { id: true, name: true },
     orderBy: { name: 'asc' },
   })

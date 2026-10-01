@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { auth } from '../src/lib/auth'
 import { prisma } from '../src/lib/prisma'
+import { ensureAiAgentUser } from '../src/lib/ai-agent'
 import { Role } from '@prisma/client'
 
 async function main() {
@@ -14,27 +15,29 @@ async function main() {
   const existing = await prisma.user.findUnique({ where: { email } })
   if (existing) {
     console.log(`User ${email} already exists, skipping.`)
-    return
+  } else {
+    const ctx = await auth.$context
+    const hash = await ctx.password.hash(password)
+
+    const createdUser = await ctx.internalAdapter.createUser({
+      email,
+      name: 'Admin',
+      emailVerified: true,
+      role: Role.admin,
+    })
+
+    await ctx.internalAdapter.linkAccount({
+      userId: createdUser.id,
+      providerId: 'credential',
+      accountId: createdUser.id,
+      password: hash,
+    })
+
+    console.log(`Created admin user ${email}`)
   }
 
-  const ctx = await auth.$context
-  const hash = await ctx.password.hash(password)
-
-  const createdUser = await ctx.internalAdapter.createUser({
-    email,
-    name: 'Admin',
-    emailVerified: true,
-    role: Role.admin,
-  })
-
-  await ctx.internalAdapter.linkAccount({
-    userId: createdUser.id,
-    providerId: 'credential',
-    accountId: createdUser.id,
-    password: hash,
-  })
-
-  console.log(`Created admin user ${email}`)
+  await ensureAiAgentUser()
+  console.log('Ensured AI agent user exists.')
 }
 
 main()

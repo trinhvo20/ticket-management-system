@@ -1,6 +1,7 @@
 import 'dotenv/config'
 import { auth } from '../src/lib/auth'
 import { prisma } from '../src/lib/prisma'
+import { ensureAiAgentUser } from '../src/lib/ai-agent'
 import { Role } from '@prisma/client'
 
 async function createUser(email: string, password: string, name: string, role: Role) {
@@ -38,6 +39,9 @@ async function main() {
   )
 
   await createUser('agent@example.com', 'password123', 'Agent', Role.agent)
+
+  await ensureAiAgentUser()
+  console.log('Ensured AI agent user exists.')
 }
 
 main()
