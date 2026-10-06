@@ -92,6 +92,14 @@ Planned layers as routes are added:
 - **Scope limit**: no persisted delivery-status field on `TicketReply` — a failed send is retried 3x by pg-boss and logged, same as the other two workers; there's no "failed to send" UI indicator yet.
 - **Env vars**: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` (the Single-Sender-Verified address), `SENDGRID_FROM_NAME` (defaults to `Support Team`).
 
+### Error Logging (Sentry)
+
+- Server and client each report to their own Sentry project via separate DSNs, set up in `src/lib/sentry.ts` (`Sentry.init()` runs as a side effect on import — must stay the first import in `index.ts`/`main.tsx`).
+- **Server** captures only Express route errors, via `Sentry.setupExpressErrorHandler(app)` registered after all routes. Not covered: pg-boss worker failures, `boss.on('error', ...)`.
+- **Client** captures only React render crashes, via `<Sentry.ErrorBoundary>` wrapping the app in `main.tsx`. Not covered: axios errors in `lib/api.ts`.
+- No DSN set → `Sentry.init()` no-ops (safe for dev/test).
+- **Env vars**: `SENTRY_DSN` / `VITE_SENTRY_DSN` (required to enable), `SENTRY_ENVIRONMENT` / `VITE_SENTRY_ENVIRONMENT` (optional, overrides the Sentry `environment` tag — otherwise defaults to `NODE_ENV`/Vite's `MODE`).
+
 ### Auth
 
 - **Better Auth** (`src/lib/auth.ts`) — email/password, database sessions via Prisma adapter (`@prisma/client` default output).
@@ -193,6 +201,8 @@ CLIENT_URL            # Client origin for CORS (http://localhost:5173)
 OPENAI_API_KEY        # OpenAI API key, used by the Vercel AI SDK for classification, auto-resolution, summaries, and reply polishing (gpt-5-nano-2025-08-07)
 SENDGRID_API_KEY      # or MAILGUN_API_KEY
 EMAIL_WEBHOOK_SECRET  # HMAC secret for inbound webhook verification
+SENTRY_DSN            # Sentry DSN for server-side error reporting (optional; omit to disable)
+SENTRY_ENVIRONMENT    # overrides the Sentry `environment` tag (optional; defaults to NODE_ENV)
 ```
 
-`/client` also has its own `.env` with `VITE_SERVER_URL` (server origin used by the Better Auth client and API calls, default `http://localhost:3001`).
+`/client` also has its own `.env` with `VITE_SERVER_URL` (server origin used by the Better Auth client and API calls, default `http://localhost:3001`), `VITE_SENTRY_DSN` (Sentry DSN for client-side error reporting, optional; omit to disable), and `VITE_SENTRY_ENVIRONMENT` (overrides the Sentry `environment` tag, optional; defaults to Vite's `MODE`).

@@ -1,3 +1,4 @@
+import { Sentry } from './lib/sentry'
 import express from 'express'
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
@@ -46,6 +47,10 @@ if (process.env.NODE_ENV !== 'test') {
   app.use('/api/webhooks/email', webhookRateLimit, webhooksRouter)
 } else {
   app.use('/api/webhooks/email', webhooksRouter)
+}
+
+if (process.env.SENTRY_DSN) {
+  Sentry.setupExpressErrorHandler(app)
 }
 
 await startBoss()

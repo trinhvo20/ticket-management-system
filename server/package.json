@@ -17,6 +17,7 @@
     "@prisma/adapter-pg": "^7.8.0",
     "@prisma/client": "^7.8.0",
     "@sendgrid/mail": "^8.1.6",
+    "@sentry/node": "^11.4.0",
     "@ticket/core": "workspace:*",
     "ai": "^7.0.68",
     "better-auth": "^1.6.15",
