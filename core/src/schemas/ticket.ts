@@ -28,6 +28,7 @@ export const inboundEmailSchema = z.object({
   subject: z.string().trim().min(1, 'Subject is required').max(255),
   body: z.string().trim().min(1, 'Body is required').max(1_000),
   bodyHtml: z.string().max(2_000).optional(),
+  messageId: z.string().max(998).optional(),
 })
 
 export type InboundEmailInput = z.infer<typeof inboundEmailSchema>

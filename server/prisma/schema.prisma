@@ -88,6 +88,7 @@ model Ticket {
   bodyHtml     String?
   fromEmail    String
   fromName     String
+  messageId    String?
   status       TicketStatus    @default(new)
   category     TicketCategory?
   assignedToId String?

@@ -5,7 +5,11 @@ describe('mapCloudMailinPayload', () => {
   it('maps a plain normalized payload', () => {
     const result = mapCloudMailinPayload({
       envelope: { from: 'customer@example.com' },
-      headers: { from: 'Alice Customer <customer@example.com>', subject: 'Cannot log in' },
+      headers: {
+        from: 'Alice Customer <customer@example.com>',
+        subject: 'Cannot log in',
+        message_id: '<4F145791.8040802@example.com>',
+      },
       plain: "I can't log in to my account.",
       html: '<p>I can&#39;t log in to my account.</p>',
     })
@@ -16,7 +20,18 @@ describe('mapCloudMailinPayload', () => {
       subject: 'Cannot log in',
       body: "I can't log in to my account.",
       bodyHtml: '<p>I can&#39;t log in to my account.</p>',
+      messageId: '<4F145791.8040802@example.com>',
     })
+  })
+
+  it('leaves messageId undefined when the header is missing', () => {
+    const result = mapCloudMailinPayload({
+      envelope: { from: 'customer@example.com' },
+      headers: { from: 'Alice Customer <customer@example.com>', subject: 'Cannot log in' },
+      plain: "I can't log in to my account.",
+    })
+
+    expect(result?.messageId).toBeUndefined()
   })
 
   it('strips an Outlook-style quoted reply below an underscore separator', () => {

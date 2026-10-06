@@ -17,7 +17,7 @@ AI-powered support ticket management system. Inbound emails become tickets; Open
 - **Shared**: `/core` — internal package (`@ticket/core`) for Zod schemas and types shared between client and server
 - **Database**: PostgreSQL via Prisma ORM
 - **Jobs**: **pg-boss** (Postgres-backed queue) for background AI classification/auto-resolution — `src/lib/boss.ts`
-- **AI**: OpenAI via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai`), model `gpt-5-nano-2025-08-07`
+- **AI**: [OpenAI](https://platform.openai.com/home) via the **Vercel AI SDK** (`ai` + `@ai-sdk/openai`), model `gpt-5-nano-2025-08-07`
 - **Email**: SendGrid or Mailgun
 - **Package manager / runtime**: Bun workspaces
 
@@ -76,11 +76,21 @@ Planned layers as routes are added:
 - **Endpoint**: `POST /api/webhooks/email` — provider-agnostic; accepts an already-normalized JSON payload and creates a `Ticket`. Shared creation/threading logic lives in `handleInboundEmail` (`src/routes/webhooks.ts`), called by every provider route after it maps to the normalized shape.
 - **`POST /api/webhooks/email/cloudmailin`** — for [CloudMailin](https://www.cloudmailin.com/) (used in dev since it needs no owned domain: free inbound address like `random@cloudmailin.net`). Maps CloudMailin's ["Normalized JSON" format](https://docs.cloudmailin.com/http_post_formats/json_normalized/) (`envelope`, `headers.from`/`headers.subject`, `plain`, `html`) to `inboundEmailSchema` via `mapCloudMailinPayload` (`src/lib/inbound-email-providers.ts`). Set CloudMailin's target URL Authorization header to `Bearer <EMAIL_WEBHOOK_SECRET>` — this satisfies `webhookAuth` directly. The mapper also strips quoted reply text (Outlook `____`/`From:`+`Sent:` blocks, Gmail/Apple Mail `On ... wrote:`) via `stripQuotedReply` so only the sender's new message is kept — self-contained regex, no external library (evaluated `email-reply-parser` but it doesn't reliably cover Outlook's format out of the box).
 - **Auth**: `webhookAuth` middleware (`src/middleware/webhook.ts`) — checks `Authorization: Bearer <token>` against `EMAIL_WEBHOOK_SECRET` using `crypto.timingSafeEqual`. Applied via `webhooksRouter.use(webhookAuth)` so the router owns its own auth for every sub-route.
-- **Payload** (validated by `inboundEmailSchema` from `@ticket/core`): `{ from, fromName, subject, body, bodyHtml? }`. `body` max 1,000 chars / `bodyHtml` max 2,000 — provider mappers truncate to fit.
+- **Payload** (validated by `inboundEmailSchema` from `@ticket/core`): `{ from, fromName, subject, body, bodyHtml?, messageId? }`. `body` max 1,000 chars / `bodyHtml` max 2,000 — provider mappers truncate to fit. `messageId` (RFC 5322 Message-ID, e.g. CloudMailin's `headers.message_id`) is persisted on the `Ticket` only when it starts a new ticket, and anchors outbound threading — see Outbound Email below.
 - **Response**: `201 { id, status }` — returns only id and status, not the full row.
 - **Rate limit**: 20 req/min (applied in `src/index.ts`, always on, separate from the global production-only limiter).
 - **Ticket model**: `id` (autoincrement Int), `subject`, `body`, `bodyHtml?`, `fromEmail`, `fromName`, `status` (default `open`), `category?`, `assignedToId?` → `User`.
 - **Local dev exposure**: the server has no public URL of its own, so CloudMailin (or any provider) can't reach `localhost` directly. Run `ngrok http 3001` to get a temporary public URL, then set that as CloudMailin's target (e.g. `https://<ngrok-id>.ngrok-free.dev/api/webhooks/email/cloudmailin`). The ngrok URL changes every time the tunnel restarts on the free tier, so it has to be updated in CloudMailin's address settings after each restart.
+
+### Outbound Email
+
+- When an agent (or the AI auto-resolver) creates a `TicketReply`, it's emailed to the ticket's `fromEmail` via **SendGrid** (`@sendgrid/mail`), using **Single Sender Verification** (verify one email address you own — no domain/DNS needed, same reasoning as using CloudMailin for inbound).
+- **Provider wrapper**: `sendEmail` (`src/lib/send-email.ts`) isolates the SendGrid-specific bits — API key, `from` address/name, and setting `In-Reply-To`/`References` headers when threading.
+- **Job**: `send-reply-email` queue (`src/services/send-reply-email.ts`), following the same pg-boss pattern as `classify-ticket`/`resolve-ticket` (`enqueueSendReplyEmail` → fast insert; `sendReplyEmail` worker → throws on failure, 3 retries). Registered in `src/index.ts` via `registerSendReplyEmailWorker`.
+- **Trigger points**: `POST /:id/replies` in `src/routes/tickets.ts` (human agent reply) and the `canResolve` branch of `autoResolveTicket` (`src/services/resolve-ticket.ts`, AI auto-resolve) — both call `enqueueSendReplyEmail(reply.id)` right after creating the `TicketReply`.
+- **Threading**: subject is prefixed `Re: ` (skipped if already present). If the ticket has a `messageId` (captured from the original inbound email), outbound sends set `In-Reply-To`/`References` to it, so replies land in the same thread in the customer's mail client. Anchors to the ticket's root Message-ID only — not a full per-message chain.
+- **Scope limit**: no persisted delivery-status field on `TicketReply` — a failed send is retried 3x by pg-boss and logged, same as the other two workers; there's no "failed to send" UI indicator yet.
+- **Env vars**: `SENDGRID_API_KEY`, `SENDGRID_FROM_EMAIL` (the Single-Sender-Verified address), `SENDGRID_FROM_NAME` (defaults to `Support Team`).
 
 ### Auth
 
@@ -104,6 +114,15 @@ Planned layers as routes are added:
 - **Mocking**: use `vi.mock('../lib/api', () => ({ ... }))` to mock API functions and `queryClient`. Use `vi.mock('../lib/auth-client', ...)` to mock `useSession`.
 - **TanStack Query v5 note**: `mutationFn` receives a second context argument `{ client, meta, mutationKey }` — use `expect.anything()` for that arg in `toHaveBeenCalledWith` assertions.
 - **Run**: `bun run test:unit` from root (single run), or `bun run test:run` / `bun run test` inside `/client` for single-run / watch mode. Avoid bare `bun test` at the root — Bun's native test runner picks up Playwright specs and fails.
+
+#### Server unit tests (`/server`, `bun:test`)
+
+- **Stack**: Bun's native test runner. Test files co-located as `*.test.ts` (e.g. `src/services/classify-ticket.test.ts`).
+- **Mocking**: `mock.module('../lib/prisma', () => ({ ... }))` to stub dependencies, then `const { fn } = await import('./subject')` to load the real subject-under-test module afterward.
+- **`mock.module()` is process-global and leaks across test files** — `bun test` loads every file's top-level code (including `mock.module` calls and dynamic imports) before running any test bodies, so one file's mock can poison another file's import of the same module before that file's own mocks ever take effect. Two rules that keep this safe:
+  1. Every test file that calls `mock.module()` must also call `afterAll(() => { mock.restore() })` right after its `mock.module()` calls, so the real module is back in place once that file's tests finish.
+  2. **Never `mock.module()` a sibling service module** (e.g. `../services/classify-ticket`) that another test file needs to import for real — that stub can replace the real module before the other file's own dynamic import runs, handing it a stub missing exports it needs. Mock that service's own leaf dependency instead (almost always `../lib/boss`, since `enqueue*` functions are just `boss.send(QUEUE, payload)`) and assert on the shared `boss.send` mock with the real queue-name constant (imported unmocked from the real service module) — see `webhooks.test.ts` or `tickets.replies.test.ts` for the pattern.
+- **Run**: `bun test` from `/server` runs the whole suite.
 
 #### E2E tests (only when absolutely necessary)
 

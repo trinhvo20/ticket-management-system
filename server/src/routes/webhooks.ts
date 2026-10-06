@@ -55,6 +55,7 @@ async function handleInboundEmail(data: InboundEmailInput, res: Response) {
       bodyHtml: data.bodyHtml,
       fromEmail: data.from,
       fromName: data.fromName,
+      messageId: data.messageId,
       assignedToId: aiAgentId,
     },
     select: { id: true, status: true },

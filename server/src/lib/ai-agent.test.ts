@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, it, mock } from 'bun:test'
 
 const findUniqueMock = mock()
 const findUniqueOrThrowMock = mock()
@@ -16,6 +16,9 @@ mock.module('./auth', () => ({
     }),
   },
 }))
+afterAll(() => {
+  mock.restore()
+})
 
 const { AI_AGENT_EMAIL, AI_AGENT_NAME, getAiAgentId, ensureAiAgentUser } = await import('./ai-agent')
 

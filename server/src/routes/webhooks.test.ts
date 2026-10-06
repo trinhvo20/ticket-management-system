@@ -1,12 +1,13 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { Server } from 'http'
 import express from 'express'
 
 const findFirstMock = mock()
 const createTicketMock = mock()
 const createReplyMock = mock()
-const enqueueClassifyTicketMock = mock()
-const enqueueAutoResolveTicketMock = mock()
+const sendMock = mock()
+const createQueueMock = mock()
+const workMock = mock()
 const getAiAgentIdMock = mock()
 
 mock.module('../lib/prisma', () => ({
@@ -15,11 +16,21 @@ mock.module('../lib/prisma', () => ({
     ticketReply: { create: createReplyMock },
   },
 }))
-mock.module('../services/classify-ticket', () => ({ enqueueClassifyTicket: enqueueClassifyTicketMock }))
-mock.module('../services/resolve-ticket', () => ({ enqueueAutoResolveTicket: enqueueAutoResolveTicketMock }))
+// Mocking the shared leaf dependency (boss) instead of the sibling service modules
+// (classify-ticket/resolve-ticket) lets those modules' real enqueue* functions run, so other
+// test files that import them for real aren't handed a stub missing their other exports —
+// mock.module() is process-global in bun:test and isn't undone until this file's tests finish.
+mock.module('../lib/boss', () => ({
+  boss: { send: sendMock, createQueue: createQueueMock, work: workMock },
+}))
 mock.module('../lib/ai-agent', () => ({ getAiAgentId: getAiAgentIdMock }))
+afterAll(() => {
+  mock.restore()
+})
 
 const { webhooksRouter } = await import('./webhooks')
+const { CLASSIFY_TICKET_QUEUE } = await import('../services/classify-ticket')
+const { AUTO_RESOLVE_TICKET_QUEUE } = await import('../services/resolve-ticket')
 
 const SECRET = 'test-webhook-secret'
 const PAYLOAD = {
@@ -37,8 +48,10 @@ beforeEach(async () => {
   findFirstMock.mockReset()
   createTicketMock.mockReset()
   createReplyMock.mockReset()
-  enqueueClassifyTicketMock.mockReset()
-  enqueueAutoResolveTicketMock.mockReset()
+  sendMock.mockReset()
+  sendMock.mockResolvedValue(undefined)
+  createQueueMock.mockReset()
+  workMock.mockReset()
   getAiAgentIdMock.mockReset()
   getAiAgentIdMock.mockResolvedValue('ai-user-1')
 
@@ -70,8 +83,6 @@ describe('POST /api/webhooks/email', () => {
   it('enqueues classification and auto-resolve jobs for a newly created ticket', async () => {
     findFirstMock.mockResolvedValueOnce(null)
     createTicketMock.mockResolvedValueOnce({ id: 42, status: 'new' })
-    enqueueClassifyTicketMock.mockResolvedValueOnce(undefined)
-    enqueueAutoResolveTicketMock.mockResolvedValueOnce(undefined)
 
     const res = await postWebhook(PAYLOAD)
 
@@ -80,8 +91,8 @@ describe('POST /api/webhooks/email', () => {
     expect(createTicketMock).toHaveBeenCalledWith(
       expect.objectContaining({ data: expect.objectContaining({ assignedToId: 'ai-user-1' }) }),
     )
-    expect(enqueueClassifyTicketMock).toHaveBeenCalledWith(42)
-    expect(enqueueAutoResolveTicketMock).toHaveBeenCalledWith(42)
+    expect(sendMock).toHaveBeenCalledWith(CLASSIFY_TICKET_QUEUE, { ticketId: 42 })
+    expect(sendMock).toHaveBeenCalledWith(AUTO_RESOLVE_TICKET_QUEUE, { ticketId: 42 })
   })
 
   it('threads onto an existing new/processing/open ticket instead of creating a new one', async () => {
@@ -94,8 +105,7 @@ describe('POST /api/webhooks/email', () => {
     expect(findFirstMock).toHaveBeenCalledWith(
       expect.objectContaining({ where: expect.objectContaining({ status: { in: ['new', 'processing', 'open'] } }) }),
     )
-    expect(enqueueClassifyTicketMock).not.toHaveBeenCalled()
-    expect(enqueueAutoResolveTicketMock).not.toHaveBeenCalled()
+    expect(sendMock).not.toHaveBeenCalled()
   })
 })
 
@@ -109,7 +119,11 @@ function postCloudMailinWebhook(body: unknown) {
 
 const CLOUDMAILIN_PAYLOAD = {
   envelope: { from: 'customer@example.com' },
-  headers: { from: 'Alice Customer <customer@example.com>', subject: 'Cannot log in' },
+  headers: {
+    from: 'Alice Customer <customer@example.com>',
+    subject: 'Cannot log in',
+    message_id: '<4F145791.8040802@example.com>',
+  },
   plain: "I can't log in to my account.",
   html: '<p>I can&#39;t log in to my account.</p>',
 }
@@ -118,8 +132,6 @@ describe('POST /api/webhooks/email/cloudmailin', () => {
   it('maps CloudMailin normalized JSON into a new ticket', async () => {
     findFirstMock.mockResolvedValueOnce(null)
     createTicketMock.mockResolvedValueOnce({ id: 43, status: 'new' })
-    enqueueClassifyTicketMock.mockResolvedValueOnce(undefined)
-    enqueueAutoResolveTicketMock.mockResolvedValueOnce(undefined)
 
     const res = await postCloudMailinWebhook(CLOUDMAILIN_PAYLOAD)
 
@@ -132,6 +144,7 @@ describe('POST /api/webhooks/email/cloudmailin', () => {
           fromName: 'Alice Customer',
           subject: 'Cannot log in',
           body: "I can't log in to my account.",
+          messageId: '<4F145791.8040802@example.com>',
         }),
       }),
     )

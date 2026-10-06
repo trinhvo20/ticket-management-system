@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, afterEach, beforeEach, describe, expect, it, mock } from 'bun:test'
 import type { Server } from 'http'
 import express from 'express'
 
@@ -15,6 +15,9 @@ mock.module('../middleware/auth', () => ({
   },
   requireAdmin: (_req: any, _res: any, next: any) => next(),
 }))
+afterAll(() => {
+  mock.restore()
+})
 
 const { usersRouter } = await import('./users')
 const { AI_AGENT_EMAIL } = await import('../lib/ai-agent')

@@ -6,6 +6,7 @@ import { join, dirname } from 'path'
 import { fileURLToPath } from 'url'
 import { prisma } from '../lib/prisma'
 import { boss } from '../lib/boss'
+import { enqueueSendReplyEmail } from './send-reply-email'
 
 export const AUTO_RESOLVE_TICKET_QUEUE = 'auto-resolve-ticket'
 
@@ -79,7 +80,7 @@ export async function autoResolveTicket(ticketId: number): Promise<void> {
   }
 
   if (object.canResolve && object.replyBody.trim()) {
-    await prisma.$transaction([
+    const [reply] = await prisma.$transaction([
       prisma.ticketReply.create({
         data: {
           ticketId,
@@ -94,6 +95,7 @@ export async function autoResolveTicket(ticketId: number): Promise<void> {
         data: { status: 'resolved', resolvedAt: new Date() },
       }),
     ])
+    await enqueueSendReplyEmail(reply.id)
   } else {
     // Unassign from the AI agent so the ticket falls back to the normal human queue.
     await prisma.ticket.updateMany({

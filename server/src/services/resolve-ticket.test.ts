@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, it, mock } from 'bun:test'
 
 const generateObjectMock = mock()
 const openaiMock = mock((modelId: string) => ({ modelId }))
@@ -22,6 +22,9 @@ mock.module('../lib/prisma', () => ({
 mock.module('../lib/boss', () => ({
   boss: { send: sendMock, createQueue: createQueueMock, work: workMock },
 }))
+afterAll(() => {
+  mock.restore()
+})
 
 const {
   autoResolveTicket,
@@ -29,6 +32,7 @@ const {
   registerAutoResolveTicketWorker,
   AUTO_RESOLVE_TICKET_QUEUE,
 } = await import('./resolve-ticket')
+const { SEND_REPLY_EMAIL_QUEUE } = await import('./send-reply-email')
 
 const TICKET = {
   subject: 'Forgot my password',
@@ -84,6 +88,7 @@ describe('autoResolveTicket', () => {
     generateObjectMock.mockResolvedValueOnce({
       object: { canResolve: true, replyBody: 'Click "Forgot Password" on the login page.' },
     })
+    ticketReplyCreateMock.mockResolvedValueOnce({ id: 55 })
 
     await autoResolveTicket(1)
 
@@ -109,6 +114,7 @@ describe('autoResolveTicket', () => {
       where: { id: 1, status: 'processing' },
       data: { status: 'resolved', resolvedAt: expect.any(Date) },
     })
+    expect(sendMock).toHaveBeenCalledWith(SEND_REPLY_EMAIL_QUEUE, { replyId: 55 })
   })
 
   it('falls back to open and unassigns from AI when the AI declines to resolve the ticket', async () => {
@@ -122,6 +128,7 @@ describe('autoResolveTicket', () => {
       where: { id: 1, status: 'processing' },
       data: { status: 'open', assignedToId: null },
     })
+    expect(sendMock).not.toHaveBeenCalledWith(SEND_REPLY_EMAIL_QUEUE, expect.anything())
   })
 
   it('falls back to open and unassigns from AI when canResolve is true but replyBody is blank', async () => {

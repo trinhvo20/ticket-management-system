@@ -10,6 +10,7 @@ import { webhooksRouter } from './routes/webhooks'
 import { startBoss, stopBoss } from './lib/boss'
 import { registerClassifyTicketWorker } from './services/classify-ticket'
 import { registerAutoResolveTicketWorker } from './services/resolve-ticket'
+import { registerSendReplyEmailWorker } from './services/send-reply-email'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
@@ -50,6 +51,7 @@ if (process.env.NODE_ENV !== 'test') {
 await startBoss()
 await registerClassifyTicketWorker()
 await registerAutoResolveTicketWorker()
+await registerSendReplyEmailWorker()
 
 const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`)

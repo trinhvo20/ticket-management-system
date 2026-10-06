@@ -4,7 +4,7 @@ import type { InboundEmailInput } from '@ticket/core'
 // https://docs.cloudmailin.com/http_post_formats/json_normalized/
 interface CloudMailinPayload {
   envelope?: { from?: string }
-  headers?: { from?: string; subject?: string }
+  headers?: { from?: string; subject?: string; message_id?: string }
   plain?: string
   html?: string
 }
@@ -62,5 +62,6 @@ export function mapCloudMailinPayload(payload: unknown): InboundEmailInput | nul
     subject: p.headers?.subject?.trim() || '(no subject)',
     body: body.slice(0, 1_000),
     bodyHtml: html ? html.slice(0, 2_000) : undefined,
+    messageId: p.headers?.message_id?.trim() || undefined,
   }
 }

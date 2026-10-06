@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, mock } from 'bun:test'
+import { afterAll, beforeEach, describe, expect, it, mock } from 'bun:test'
 
 const generateObjectMock = mock()
 const openaiMock = mock((modelId: string) => ({ modelId }))
@@ -18,6 +18,9 @@ mock.module('../lib/prisma', () => ({
 mock.module('../lib/boss', () => ({
   boss: { send: sendMock, createQueue: createQueueMock, work: workMock },
 }))
+afterAll(() => {
+  mock.restore()
+})
 
 const { classifyTicket, enqueueClassifyTicket, registerClassifyTicketWorker, CLASSIFY_TICKET_QUEUE } = await import(
   './classify-ticket'
