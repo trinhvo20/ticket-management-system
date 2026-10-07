@@ -1,8 +1,9 @@
 import { Role } from '@prisma/client'
+import { AI_AGENT_EMAIL } from '@ticket/core'
 import { auth } from './auth'
 import { prisma } from './prisma'
 
-export const AI_AGENT_EMAIL = 'ai@system.local'
+export { AI_AGENT_EMAIL }
 export const AI_AGENT_NAME = 'AI'
 
 export async function getAiAgentId(): Promise<string> {

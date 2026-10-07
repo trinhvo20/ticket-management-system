@@ -1,7 +1,7 @@
 import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest'
-import { TicketStatus, TicketCategory } from '@ticket/core'
+import { TicketStatus, TicketCategory, type TicketDetail } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { UpdateTicket } from './UpdateTicket'
 import { getAgents, updateTicket } from '../lib/api'
@@ -66,7 +66,7 @@ beforeEach(() => {
   vi.mocked(updateTicket).mockResolvedValue(undefined)
 })
 
-function render(ticket = TICKET) {
+function render(ticket: TicketDetail = TICKET) {
   return renderWithQuery(<UpdateTicket ticket={ticket} />)
 }
 

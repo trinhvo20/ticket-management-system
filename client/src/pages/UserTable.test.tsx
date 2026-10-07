@@ -1,7 +1,7 @@
 import { screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { Role } from '@ticket/core'
+import { AI_AGENT_EMAIL, Role } from '@ticket/core'
 import { renderWithQuery } from '../test/render-with-query'
 import { UserTable } from './UserTable'
 import { deleteUser, updateUser } from '../lib/api'
@@ -89,6 +89,43 @@ describe('UserTable', () => {
       const deleteButtons = screen.getAllByRole('button', { name: /delete user/i })
       // agent-1 → enabled
       expect(deleteButtons[2]).not.toBeDisabled()
+    })
+  })
+
+  describe('AI agent system user', () => {
+    const AI_USER = {
+      id: 'ai-1',
+      name: 'AI',
+      email: AI_AGENT_EMAIL,
+      role: Role.Agent,
+      createdAt: '2024-01-04T00:00:00.000Z',
+    }
+
+    function renderWithAiUser() {
+      return renderWithQuery(
+        <UserTable users={[AGENT_USER, AI_USER]} isLoading={false} currentUserId="admin-1" />
+      )
+    }
+
+    it('shows a System badge on the AI user row', () => {
+      renderWithAiUser()
+      const aiRow = screen.getByRole('row', { name: /ai@system\.local/i })
+      expect(within(aiRow).getByText('System')).toBeInTheDocument()
+    })
+
+    it('hides the edit and delete buttons on the AI user row', () => {
+      renderWithAiUser()
+      const aiRow = screen.getByRole('row', { name: /ai@system\.local/i })
+      expect(within(aiRow).queryByRole('button', { name: /edit user/i })).not.toBeInTheDocument()
+      expect(within(aiRow).queryByRole('button', { name: /delete user/i })).not.toBeInTheDocument()
+    })
+
+    it('keeps the edit and delete buttons and no badge on regular user rows', () => {
+      renderWithAiUser()
+      const janeRow = screen.getByRole('row', { name: /jane@example\.com/i })
+      expect(within(janeRow).getByRole('button', { name: /edit user/i })).toBeInTheDocument()
+      expect(within(janeRow).getByRole('button', { name: /delete user/i })).toBeInTheDocument()
+      expect(within(janeRow).queryByText('System')).not.toBeInTheDocument()
     })
   })
 

@@ -127,7 +127,9 @@ describe('POST /api/tickets/:id/replies/polish', () => {
 
     const call = generateTextMock.mock.calls[0][0] as any
     expect(call.system).toContain('Bob Agent')
-    expect(call.system).toContain('Alice Customer')
+    // Greets by first name only (TICKET.fromName is 'Alice Customer')
+    expect(call.system).toContain('first name: Alice.')
+    expect(call.system).not.toContain('Alice Customer')
   })
 
   it('instructs the model to treat the ticket subject/body as untrusted context, not instructions', async () => {

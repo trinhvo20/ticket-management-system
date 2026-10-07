@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Pencil, Trash2, ArrowUpDown, ArrowUp, ArrowDown } from 'lucide-react'
 import { useMutation } from '@tanstack/react-query'
-import { Role } from '@ticket/core'
+import { AI_AGENT_EMAIL, Role } from '@ticket/core'
 import type { User } from '../lib/api'
 import { deleteUser, userKeys, queryClient } from '../lib/api'
 import { Button } from '@/components/ui/button'
@@ -126,9 +126,19 @@ export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
           {sortedUsers.map((user) => {
             const isSelf = user.id === currentUserId
             const isAdmin = user.role === Role.Admin
+            const isSystem = user.email === AI_AGENT_EMAIL
             return (
               <TableRow key={user.id}>
-                <TableCell className="px-4 font-medium">{user.name}</TableCell>
+                <TableCell className="px-4 font-medium">
+                  <div className="flex items-center gap-2">
+                    {user.name}
+                    {isSystem && (
+                      <span className="inline-flex rounded-full px-2 py-0.5 text-xs font-medium bg-purple-100 text-purple-700">
+                        System
+                      </span>
+                    )}
+                  </div>
+                </TableCell>
                 <TableCell className="px-4 text-muted-foreground">{user.email}</TableCell>
                 <TableCell className="px-4">
                   <span
@@ -145,25 +155,27 @@ export function UserTable({ users, isLoading, currentUserId }: UserTableProps) {
                   {new Date(user.createdAt).toLocaleDateString()}
                 </TableCell>
                 <TableCell className="px-4 text-right">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon-xs"
-                      aria-label="Edit user"
-                      onClick={() => setEditingUser(user)}
-                    >
-                      <Pencil />
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="icon-xs"
-                      aria-label="Delete user"
-                      disabled={isSelf || isAdmin}
-                      onClick={() => setDeletingUser(user)}
-                    >
-                      <Trash2 />
-                    </Button>
-                  </div>
+                  {!isSystem && (
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="icon-xs"
+                        aria-label="Edit user"
+                        onClick={() => setEditingUser(user)}
+                      >
+                        <Pencil />
+                      </Button>
+                      <Button
+                        variant="destructive"
+                        size="icon-xs"
+                        aria-label="Delete user"
+                        disabled={isSelf || isAdmin}
+                        onClick={() => setDeletingUser(user)}
+                      >
+                        <Trash2 />
+                      </Button>
+                    </div>
+                  )}
                 </TableCell>
               </TableRow>
             )

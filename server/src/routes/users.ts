@@ -9,6 +9,13 @@ import { AI_AGENT_EMAIL } from '../lib/ai-agent'
 
 export const usersRouter = Router()
 
+const AI_AGENT_PROTECTED_ERROR = 'The AI agent is a system user and cannot be modified'
+
+async function isAiAgent(id: string): Promise<boolean> {
+  const user = await prisma.user.findUnique({ where: { id }, select: { email: true } })
+  return user?.email === AI_AGENT_EMAIL
+}
+
 // Get all agents (for ticket assignment dropdown) — excludes the AI agent, since manually
 // assigning a ticket to it here wouldn't trigger auto-resolution.
 usersRouter.get('/agents', requireAuth, async (_req, res) => {
@@ -72,6 +79,11 @@ usersRouter.post('/', requireAuth, requireAdmin, async (req, res) => {
 usersRouter.patch('/:id', requireAuth, requireAdmin, async (req, res) => {
   const id = req.params['id'] as string
 
+  if (await isAiAgent(id)) {
+    res.status(403).json({ error: AI_AGENT_PROTECTED_ERROR })
+    return
+  }
+
   const data = parseBody(updateUserSchema, req.body, res)
   if (!data) return
   const { name, email, role, password } = data
@@ -128,11 +140,16 @@ usersRouter.delete('/:id', requireAuth, requireAdmin, async (req, res) => {
 
   const target = await prisma.user.findUnique({
     where: { id },
-    select: { id: true, role: true, deletedAt: true },
+    select: { id: true, email: true, role: true, deletedAt: true },
   })
 
   if (!target || target.deletedAt) {
     res.status(404).json({ error: 'User not found' })
+    return
+  }
+
+  if (target.email === AI_AGENT_EMAIL) {
+    res.status(403).json({ error: AI_AGENT_PROTECTED_ERROR })
     return
   }
 
