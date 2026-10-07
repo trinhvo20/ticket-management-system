@@ -24,7 +24,7 @@ export function TicketSummary({ ticket }: Props) {
           disabled={summarizeMutation.isPending}
           onClick={() => summarizeMutation.mutate()}
         >
-          <Sparkles className="mr-2 h-4 w-4" />
+          <Sparkles className="mr-2 h-4 w-4 text-primary" />
           {summarizeMutation.isPending ? 'Summarizing…' : 'Summarize'}
         </Button>
 
@@ -38,8 +38,11 @@ export function TicketSummary({ ticket }: Props) {
 
         {summarizeMutation.isSuccess && (
           <div>
-            <p className="text-muted-foreground mb-2 text-sm">Summary</p>
-            <p className="text-sm leading-relaxed">{summarizeMutation.data}</p>
+            <p className="mb-2 flex items-center gap-1.5 text-sm font-medium text-accent-foreground">
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              AI summary
+            </p>
+            <p className="rounded-lg bg-accent/60 p-3 text-sm leading-relaxed">{summarizeMutation.data}</p>
           </div>
         )}
       </CardContent>

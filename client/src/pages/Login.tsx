@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { useNavigate } from 'react-router'
-import { Eye, EyeOff } from 'lucide-react'
+import { Eye, EyeOff, Ticket } from 'lucide-react'
 import { authClient, useSession } from '../lib/auth-client'
 import { Button } from '@/components/ui/button'
 import {
@@ -54,7 +54,13 @@ export function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-muted/50 p-4">
+    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-background bg-[radial-gradient(circle_at_top,var(--accent),transparent_60%)] p-4">
+      <div className="flex items-center gap-2 text-base font-semibold">
+        <span className="flex size-9 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+          <Ticket className="size-5" aria-hidden="true" />
+        </span>
+        Ticket Management System
+      </div>
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl">Sign in</CardTitle>

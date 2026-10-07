@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
+import { Plus, Users as UsersIcon } from 'lucide-react'
 import { useSession } from '../lib/auth-client'
 import { getUsers, userKeys } from '../lib/api'
 import { Button } from '@/components/ui/button'
 import { useState } from 'react'
+import { PageHeader } from '../components/PageHeader'
 import { AddUserForm } from './AddUserForm'
 import { UserTable } from './UserTable'
 
@@ -21,12 +23,19 @@ export function Users() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Users</h1>
-        {!showForm && (
-          <Button onClick={() => setShowForm(true)}>Add User</Button>
-        )}
-      </div>
+      <PageHeader
+        icon={UsersIcon}
+        title="Users"
+        description="Admins and agents who can sign in to the desk."
+        action={
+          !showForm && (
+            <Button onClick={() => setShowForm(true)}>
+              <Plus aria-hidden="true" />
+              Add User
+            </Button>
+          )
+        }
+      />
 
       {showForm && (
         <AddUserForm

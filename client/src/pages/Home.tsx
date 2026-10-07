@@ -1,7 +1,9 @@
 import { useQuery } from '@tanstack/react-query'
+import { LayoutDashboard } from 'lucide-react'
 import { useSession } from '../lib/auth-client'
 import { dashboardKeys, getStats } from '../lib/api'
 import { DashboardStatCards, DashboardStatCardsSkeleton } from '../components/DashboardStatCards'
+import { PageHeader } from '../components/PageHeader'
 import { TicketsPerDayChart, TicketsPerDayChartSkeleton } from '../components/TicketsPerDayChart'
 
 export function Home() {
@@ -13,10 +15,11 @@ export function Home() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-      <p className="mt-2 text-gray-600">
-        Welcome back, {session?.user.name}.
-      </p>
+      <PageHeader
+        icon={LayoutDashboard}
+        title="Dashboard"
+        description={`Welcome back, ${session?.user.name ?? ''}.`}
+      />
 
       {isLoading || !stats ? <DashboardStatCardsSkeleton /> : <DashboardStatCards stats={stats} />}
 

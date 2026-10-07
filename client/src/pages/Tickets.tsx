@@ -1,9 +1,11 @@
 import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
+import { Ticket } from 'lucide-react'
 import type { SortingState } from '@tanstack/react-table'
 import { TicketStatus, TicketCategory } from '@ticket/core'
 import { getTickets, getAgents, ticketKeys, agentKeys } from '../lib/api'
 import type { TicketQueryParams } from '../lib/api'
+import { PageHeader } from '../components/PageHeader'
 import { TicketTable } from './TicketTable'
 import { TicketFilters } from './TicketFilters'
 import { TicketPagination } from './TicketPagination'
@@ -57,7 +59,7 @@ export function Tickets() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">Tickets</h1>
+      <PageHeader icon={Ticket} title="Tickets" description="Customer emails, sorted and classified by AI." />
 
       <TicketFilters
         search={search}

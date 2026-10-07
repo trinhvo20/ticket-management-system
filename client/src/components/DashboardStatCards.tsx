@@ -1,3 +1,4 @@
+import { Bot, Clock, Inbox, Percent, Ticket, type LucideIcon } from 'lucide-react'
 import type { DashboardStats } from '../lib/api'
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -20,13 +21,17 @@ function formatDuration(ms: number | null): string {
 interface StatCardProps {
   label: string
   value: string
+  icon: LucideIcon
 }
 
-function StatCard({ label, value }: StatCardProps) {
+function StatCard({ label, value, icon: Icon }: StatCardProps) {
   return (
     <Card>
-      <CardHeader>
+      <CardHeader className="flex items-center justify-between gap-2">
         <CardTitle className="text-sm font-normal text-muted-foreground">{label}</CardTitle>
+        <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-accent text-primary">
+          <Icon className="size-4" aria-hidden="true" />
+        </span>
       </CardHeader>
       <CardContent>
         <span className="text-2xl font-semibold">{value}</span>
@@ -55,11 +60,11 @@ interface DashboardStatCardsProps {
 export function DashboardStatCards({ stats }: DashboardStatCardsProps) {
   return (
     <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-      <StatCard label="Total Tickets" value={stats.total.toString()} />
-      <StatCard label="Open Tickets" value={stats.open.toString()} />
-      <StatCard label="Resolved by AI" value={stats.resolvedByAi.toString()} />
-      <StatCard label="% Resolved by AI" value={`${stats.pctResolvedByAi.toFixed(1)}%`} />
-      <StatCard label="Avg Resolution Time" value={formatDuration(stats.avgResolutionTimeMs)} />
+      <StatCard label="Total Tickets" icon={Ticket} value={stats.total.toString()} />
+      <StatCard label="Open Tickets" icon={Inbox} value={stats.open.toString()} />
+      <StatCard label="Resolved by AI" icon={Bot} value={stats.resolvedByAi.toString()} />
+      <StatCard label="% Resolved by AI" icon={Percent} value={`${stats.pctResolvedByAi.toFixed(1)}%`} />
+      <StatCard label="Avg Resolution Time" icon={Clock} value={formatDuration(stats.avgResolutionTimeMs)} />
     </div>
   )
 }
