@@ -83,6 +83,7 @@
         "express": "^5.1.0",
         "express-rate-limit": "^8.5.2",
         "pg-boss": "^12.35.1",
+        "prisma": "^7.8.0",
         "zod": "^4.4.3",
       },
       "devDependencies": {
@@ -90,7 +91,6 @@
         "@types/express": "^5.0.0",
         "@types/node": "^25.9.2",
         "bun-types": "latest",
-        "prisma": "^7.8.0",
         "typescript": "^5.7.0",
       },
     },

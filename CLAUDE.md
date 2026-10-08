@@ -169,6 +169,14 @@ Use the **`playwright-e2e-writer` agent** to write Playwright E2E tests. Tests l
 - **Row-scope selectors**: filter by unique text before clicking — `page.getByRole('row').filter({ hasText: email }).getByRole('button', { name: 'Edit user' })`.
 - **Exact name matching**: scope to a row and use `{ exact: true }` to avoid substring collisions from parallel tests.
 
+### Deployment (Railway, Docker)
+
+- **One service**: frontend and backend ship in a single Docker image and a single Railway service. In production (`NODE_ENV=production`), `src/index.ts` serves `client/dist` via `express.static` (mounted before the rate limiter) plus a `/{*splat}` SPA fallback for non-`/api/` GETs. `trust proxy` is set to 1 for Railway's proxy. `SERVER_URL` and `CLIENT_URL` are both the public app URL.
+- The client falls back to `window.location.origin` when `VITE_SERVER_URL` is unset (`lib/api.ts`, `lib/auth-client.ts`). Never set it in production.
+- `Dockerfile` (root, multi-stage): `deps` → `build` (`bun --filter client build`; `VITE_SENTRY_*` are `ARG`s because Railway passes variables to Docker builds only via `ARG`) → `prod-deps` (`bun install --production --filter server` + `prisma generate` with a placeholder `DATABASE_URL`) → `runtime` (`oven/bun:*-slim`, user `bun`, WORKDIR `/app/server`, `CMD ["bun", "src/index.ts"]`). The repo layout is preserved under `/app`. **If server code starts reading a new file at runtime, add it to the runtime stage's `COPY`s** (today: `server/src`, `server/prisma`, `server/knowledge-base.md`, `core/src`, `client/dist`).
+- `railway.json`: `DOCKERFILE` builder, pre-deploy `bun run db:deploy` (`prisma migrate deploy`, which is why `prisma` is a runtime dependency of `/server`), health check `/health`.
+- Setup steps and env vars: README "Deploying to Railway (Docker)".
+
 ### Rate Limiting
 
 `express-rate-limit` is applied globally in `src/index.ts` — 100 req / 15 min per IP, only when `NODE_ENV=production`. No-op in development and test.

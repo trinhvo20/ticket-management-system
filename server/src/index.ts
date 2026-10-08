@@ -1,4 +1,5 @@
 import { Sentry } from './lib/sentry'
+import path from 'path'
 import express from 'express'
 import cors from 'cors'
 import { rateLimit } from 'express-rate-limit'
@@ -15,10 +16,21 @@ import { registerSendReplyEmailWorker } from './services/send-reply-email'
 
 const app = express()
 const PORT = process.env.PORT ?? 3001
+const isProduction = process.env.NODE_ENV === 'production'
+const clientDist = path.resolve(import.meta.dir, '../../client/dist')
+
+// Railway terminates TLS at a proxy — trust its X-Forwarded-* headers
+app.set('trust proxy', 1)
 
 app.use(cors({ origin: process.env.CLIENT_URL ?? 'http://localhost:5173', credentials: true }))
 
-if (process.env.NODE_ENV === 'production') {
+// In production the built client is served from the same origin. Static assets are
+// mounted before the rate limiter so page loads don't eat into the API budget.
+if (isProduction) {
+  app.use(express.static(clientDist, { index: false }))
+}
+
+if (isProduction) {
   app.use(rateLimit({
     windowMs: 15 * 60 * 1000,
     limit: 100,
@@ -49,6 +61,14 @@ if (process.env.NODE_ENV !== 'test') {
   app.use('/api/webhooks/email', webhooksRouter)
 }
 
+if (isProduction) {
+  // SPA fallback: any non-API GET returns index.html so client-side routes survive a refresh
+  app.get('/{*splat}', (req, res, next) => {
+    if (req.path.startsWith('/api/')) return next()
+    res.sendFile(path.join(clientDist, 'index.html'))
+  })
+}
+
 if (process.env.SENTRY_DSN) {
   Sentry.setupExpressErrorHandler(app)
 }
@@ -59,7 +79,7 @@ await registerAutoResolveTicketWorker()
 await registerSendReplyEmailWorker()
 
 const server = app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`)
+  console.log(`Server running on port ${PORT}`)
 })
 
 async function shutdown() {
