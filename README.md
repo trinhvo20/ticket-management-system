@@ -4,7 +4,7 @@ A support desk app where **customer emails become tickets**, and **AI helps answ
 
 When a customer sends an email, the app turns it into a ticket. AI sorts it into a category, and if the answer is in the company's knowledge base, AI replies to the customer by itself. Harder tickets go to a human agent, who gets an AI summary and AI help writing the reply. Replies go back to the customer as normal emails, in the same email thread.
 
-**Live demo:** https://ticket-management-system-production-5f97.up.railway.app (login required)
+**Live demo:** https://ticket-management-system-production-5f97.up.railway.app (login required -- maybe expired due to Railway free trial)
 
 <!-- Add a screenshot here, e.g. ![Dashboard](docs/dashboard.png) -->
 
@@ -161,6 +161,22 @@ docker run --rm -p 3080:3001 --env-file server/.env \
 # open http://localhost:3080
 ```
 
+### App screenshots
+
+<img width="3830" height="1935" alt="image" src="https://github.com/user-attachments/assets/e2abc8a7-c298-43f7-b007-2e167329f8fb" />
+
+<img width="3837" height="1745" alt="image" src="https://github.com/user-attachments/assets/7208131e-3089-4535-83a4-04137d9abe8b" />
+
+<img width="3827" height="1675" alt="image" src="https://github.com/user-attachments/assets/a0484f49-05ed-4617-aabc-95ec615de91d" />
+
+<img width="3827" height="1975" alt="image" src="https://github.com/user-attachments/assets/38c94e13-c124-4f24-8a61-5514ebb1361e" />
+
+<img width="3830" height="1750" alt="image" src="https://github.com/user-attachments/assets/0b6d4d49-2af7-47eb-a155-994293142004" />
+
+<img width="3830" height="1747" alt="image" src="https://github.com/user-attachments/assets/65c10381-7a5a-4010-b7d4-e022aa8a28fc" />
+
 ---
 
 Built with the help of [Claude Code](https://claude.com/claude-code).
+
+
